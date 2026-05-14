@@ -336,38 +336,12 @@ def pin_xy(ref, num):
     return p
 
 
-# §4.1 is captured with explicit wires/junctions/power-ports (not labels);
-# its hand-drawn connectivity is translated by the §4.1 block delta too.
-_d41x, _d41y = _sec_delta["4.1"]
-wires = [(round(x1 + _d41x, 4), round(y1 + _d41y, 4),
-          round(x2 + _d41x, 4), round(y2 + _d41y, 4)) for (x1, y1, x2, y2) in [
-    (127.0, 77.47, 177.8, 77.47), (152.4, 85.09, 177.8, 85.09),
-    (177.8, 85.09, 177.8, 90.17), (127.0, 125.73, 127.0, 130.81),
-    (109.22, 71.12, 109.22, 85.09), (96.52, 81.28, 109.22, 81.28),
-    (109.22, 63.5, 109.22, 57.15), (96.52, 88.9, 96.52, 93.98),
-]]
-junctions = [(round(x + _d41x, 4), round(y + _d41y, 4)) for (x, y) in [
-    (152.4, 77.47), (165.1, 77.47), (139.7, 77.47),
-    (165.1, 85.09), (177.8, 85.09), (109.22, 81.28), (160.02, 85.09),
-]]
-ports = [(rf, lb, vl, round(x + _d41x, 4), round(y + _d41y, 4),
-          (round(vx + _d41x, 4), round(vy + _d41y, 4)))
-         for (rf, lb, vl, x, y, (vx, vy)) in [
-    ("#PWR01", "infinity-stumps:3V0", "3V0", 139.7, 77.47, (142.24, 76.2)),
-    ("#PWR02", "infinity-stumps:3V0", "3V0", 109.22, 57.15, (111.76, 55.88)),
-    ("#PWR03", "power:GND", "GND", 127.0, 130.81, (127.0, 134.62)),
-    ("#PWR04", "power:GND", "GND", 177.8, 90.17, (177.8, 93.98)),
-    ("#PWR05", "power:GND", "GND", 96.52, 93.98, (96.52, 97.79)),
-    ("#FLG02", "power:PWR_FLAG", "PWR_FLAG", 160.02, 85.09, (160.02, 80.62)),
-]]
-# label tuples: (name, x, y, angle, justify)
-labels = [(nm, round(x + _d41x, 4), round(y + _d41y, 4), a, j)
-          for (nm, x, y, a, j) in [("nRESET", 109.22, 78.74, 0, "left")]]
-# §4.1's hand-placed ports/labels also count toward its frame
-for _p in ports:
-    sec_pts["4.1"].append((_p[3], _p[4]))
-for _p in labels:
-    sec_pts["4.1"].append((_p[1], _p[2]))
+# Every block — §4.1 included — is now wired purely with labels and
+# power ports (no hand-drawn wires), so these start empty.
+wires = []
+junctions = []
+ports = []
+labels = []          # label tuples: (name, x, y, angle, justify)
 stub_wires = []
 _stub_pts = set()  # every grid point covered by a placed stub wire
 no_connects = []
@@ -464,6 +438,22 @@ def add_nc(x, y):
         sec_pts[sec].append((x, y))
 
 
+# ----- §4.1 DWM3001C module: power + decoupling -----
+# VDD on the 3V0 rail; all five module grounds tied to GND; nRESET held
+# high by R1 and broken out to the dev rail; C1/C2 = local 100 nF
+# decoupling, C3 = 10 uF bulk, C4 = a second 100 nF near the module.
+add_port("infinity-stumps:3V0", "3V0", *pin_xy("U1", 12))
+for _gnd in (1, 11, 21, 38, 48):
+    add_port("power:GND", "GND", *pin_xy("U1", _gnd))
+# GND is fed only by power_in pins — flag it driven for ERC
+add_port("power:PWR_FLAG", "PWR_FLAG", *pin_xy("U1", 1))
+add_label("nRESET", *pin_xy("U1", 47))
+add_port("infinity-stumps:3V0", "3V0", *pin_xy("R1", 1))
+add_label("nRESET", *pin_xy("R1", 2))
+for _c in ("C1", "C2", "C3", "C4"):
+    add_port("infinity-stumps:3V0", "3V0", *pin_xy(_c, 1))
+    add_port("power:GND", "GND", *pin_xy(_c, 2))
+
 # ----- §4.2 USB-C input + ESD -----
 for p in [pin_xy("J1", "A4"), pin_xy("J1", "A9"), pin_xy("J1", "B4"), pin_xy("J1", "B9"),
           pin_xy("C5", 1), pin_xy("C6", 1), pin_xy("D2", 1),
@@ -510,9 +500,9 @@ for p in [pin_xy("U3", 6), pin_xy("R11", 1)]:
     add_label("EN1_STRAP", *p)
 for p in [pin_xy("U3", 5), pin_xy("R12", 1)]:
     add_label("EN2_STRAP", *p)
-for p in [pin_xy("U3", 9), pin_xy("R9", 2), pin_xy("U1", 7)]:
+for p in [pin_xy("U3", 9), pin_xy("R9", 2), pin_xy("U1", 17)]:
     add_label("CHG", *p)
-for p in [pin_xy("U3", 7), pin_xy("R10", 2), pin_xy("U1", 8)]:
+for p in [pin_xy("U3", 7), pin_xy("R10", 2), pin_xy("U1", 16)]:
     add_label("PGOOD", *p)
 
 # ----- §4.4 cell protection -----
@@ -557,15 +547,15 @@ for p in [pin_xy("U8", "A1"), pin_xy("U7", "8"), pin_xy("C15", 1), pin_xy("C16",
     add_label("3V0_FLASH", *p)
 for p in [pin_xy("U8", "B1"), pin_xy("U7", "4"), pin_xy("C15", 2), pin_xy("C16", 2)]:
     add_port("power:GND", "GND", *p)
-for p in [pin_xy("U8", "B2"), pin_xy("U1", 16)]:
+for p in [pin_xy("U8", "B2"), pin_xy("U1", 26)]:
     add_label("FLASH_EN", *p)
-for p in [pin_xy("U7", "6"), pin_xy("U1", 12)]:
+for p in [pin_xy("U7", "6"), pin_xy("U1", 22)]:
     add_label("SPI_SCK", *p)
-for p in [pin_xy("U7", "5"), pin_xy("U1", 13)]:
+for p in [pin_xy("U7", "5"), pin_xy("U1", 23)]:
     add_label("SPI_MOSI", *p)
-for p in [pin_xy("U7", "2"), pin_xy("U1", 14)]:
+for p in [pin_xy("U7", "2"), pin_xy("U1", 24)]:
     add_label("SPI_MISO", *p)
-for p in [pin_xy("U7", "1"), pin_xy("U1", 15), pin_xy("R15", 2)]:
+for p in [pin_xy("U7", "1"), pin_xy("U1", 25), pin_xy("R15", 2)]:
     add_label("SPI_CS", *p)
 for p in [pin_xy("U7", "3"), pin_xy("R16", 2)]:
     add_label("FLASH_WP", *p)
@@ -579,29 +569,26 @@ add_label("LED_VCC", *pin_xy("D1", 1))
 add_port("infinity-stumps:3V0", "3V0", *pin_xy("R21", 1))
 for p in [pin_xy("D1", 2), pin_xy("R18", 1)]:
     add_label("RED_K", *p)
-for p in [pin_xy("R18", 2), pin_xy("U1", 17)]:
+for p in [pin_xy("R18", 2), pin_xy("U1", 6)]:
     add_label("LED_R", *p)
 for p in [pin_xy("D1", 3), pin_xy("R19", 1)]:
     add_label("GRN_K", *p)
-for p in [pin_xy("R19", 2), pin_xy("U1", 18)]:
+for p in [pin_xy("R19", 2), pin_xy("U1", 7)]:
     add_label("LED_G", *p)
 for p in [pin_xy("D1", 4), pin_xy("R20", 1)]:
     add_label("BLU_K", *p)
-for p in [pin_xy("R20", 2), pin_xy("U1", 19)]:
+for p in [pin_xy("R20", 2), pin_xy("U1", 8)]:
     add_label("LED_B", *p)
 # power/mode button: BTN -> GND on press, R21 pull-up to 3V0, C18 debounce
-for p in [pin_xy("SW1", 1), pin_xy("R21", 2), pin_xy("C18", 1), pin_xy("U1", 6)]:
+for p in [pin_xy("SW1", 1), pin_xy("R21", 2), pin_xy("C18", 1), pin_xy("U1", 13)]:
     add_label("BTN", *p)
 for p in [pin_xy("SW1", 2), pin_xy("C18", 2)]:
     add_port("power:GND", "GND", *p)
-# EN1/EN2 are intentionally free - the BQ24074 mode is hard-strapped (R11/R12)
-add_nc(*pin_xy("U1", 10))
-add_nc(*pin_xy("U1", 11))
 
 # ----- §4.8 VBAT voltage sense divider -----
 # VBAT -> R22 -> tap -> R23 -> GND; C19 filters the tap; tap -> U1 VBAT_SENSE
 add_port("infinity-stumps:VBAT", "VBAT", *pin_xy("R22", 1))
-for p in [pin_xy("R22", 2), pin_xy("R23", 1), pin_xy("C19", 1), pin_xy("U1", 9)]:
+for p in [pin_xy("R22", 2), pin_xy("R23", 1), pin_xy("C19", 1), pin_xy("U1", 42)]:
     add_label("VBAT_SENSE", *p)
 for p in [pin_xy("R23", 2), pin_xy("C19", 2)]:
     add_port("power:GND", "GND", *p)
@@ -621,11 +608,11 @@ add_port("power:PWR_FLAG", "PWR_FLAG", *pin_xy("C20", 1))
 
 # ----- §7 break-off dev rail -----
 # U1 debug / console / GPIO pins surface here
-add_label("SWDIO", *pin_xy("U1", 2))
-add_label("SWDCLK", *pin_xy("U1", 3))
-add_label("UART_TX", *pin_xy("U1", 4))
-add_label("UART_RX", *pin_xy("U1", 5))
-for i, p in enumerate([pin_xy("U1", 20), pin_xy("U1", 21), pin_xy("U1", 22), pin_xy("U1", 23)]):
+add_label("SWDIO", *pin_xy("U1", 3))
+add_label("SWDCLK", *pin_xy("U1", 2))
+add_label("UART_TX", *pin_xy("U1", 27))
+add_label("UART_RX", *pin_xy("U1", 28))
+for i, p in enumerate([pin_xy("U1", 29), pin_xy("U1", 32), pin_xy("U1", 33), pin_xy("U1", 34)]):
     add_label("GPIO%d" % (i + 1), *p)
 
 # J2 - 2x5 1.27mm SWD/JTAG header (Cortex Debug pinout)

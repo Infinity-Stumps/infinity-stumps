@@ -280,25 +280,41 @@ be expanded to match this list (see §10).
 
 ---
 
-## 5. Pin allocation (proposed)
+## 5. Pin allocation (reconciled against the datasheet)
 
-nRF52833 GPIO exposed on the DWM3001C castellations. **Finalise against
-the DWM3001C datasheet castellation map** — the function-to-pin mapping
-below is the design intent, not the pin numbers.
+Finalised against the DWM3001C datasheet castellation map (Data Sheet
+Rev F, §3). The schematic symbol and netlist now use the **real pin
+numbers**; `tools/gen_dwm3001c_symbol.py` is the source of this table.
 
-| Function | Dir | Notes |
-|---|---|---|
-| SWDIO / SWDCLK | — | Tag-Connect TC2030 pads (production) **and** dev-rail 2×5 header |
-| UART TX / RX | — | nRF log console → dev-rail header only |
-| SPI SCK / MOSI / MISO / CS | out/io | W25Q128 flash |
-| FLASH_EN | out | TPS22916 ON pin |
-| LED_R / LED_G / LED_B | out | RGB LED, common-anode (drive low = on) |
-| BTN | in | Power/mode button, wake source |
-| CHG_STAT | in | BQ24074 /CHG (open-drain) |
-| PGOOD | in | BQ24074 /PGOOD (open-drain) |
-| EN1 / EN2 | out | BQ24074 mode control — *or* hard-strap with R11/R12 and free the GPIO |
-| VBAT_SENSE | ain | ADC, via R22/R23 divider |
-| Spare GPIO ×4–6 | — | Broken out to the dev rail for bring-up |
+| Function | Module pin | nRF GPIO | Notes |
+|---|---:|---|---|
+| VDD | 12 | — | 3.0 V supply from the LDO |
+| GND | 1, 11, 21, 38, 48 | — | All five module grounds tied to GND |
+| nRESET | 47 | P0.18 | R1 pull-up; TC2030 pads + dev-rail header |
+| SWDCLK | 2 | — | Dedicated SWD; TC2030 pads + dev-rail header |
+| SWDIO | 3 | — | Dedicated SWD; TC2030 pads + dev-rail header |
+| UART_TX | 27 | P1.09 | nRF log console → dev-rail header only |
+| UART_RX | 28 | P1.00 | nRF log console → dev-rail header only |
+| BTN | 13 | P0.12 | Power/mode button, wake source |
+| CHG_STAT | 17 | P0.20 | BQ24074 /CHG (open-drain) |
+| PGOOD | 16 | P0.21 | BQ24074 /PGOOD (open-drain) |
+| VBAT_SENSE | 42 | P0.31 | SAADC AIN7 — via R22/R23 divider |
+| SPI_SCK | 22 | P0.11 | W25Q128 flash |
+| SPI_MOSI | 23 | P1.08 | W25Q128 flash |
+| SPI_MISO | 24 | P0.06 | W25Q128 flash |
+| SPI_CS | 25 | P1.01 | W25Q128 flash |
+| FLASH_EN | 26 | P0.13 | TPS22916 ON pin |
+| LED_R / LED_G / LED_B | 6 / 7 / 8 | P0.17 / P0.14 / P0.22 | RGB LED, common-anode (drive low = on) |
+| GPIO1–4 | 29 / 32 / 33 / 34 | P1.05 / P0.15 / P0.28 / P0.19 | Spare, broken out to the dev rail |
+
+Pins **4, 5** (P0.09/P0.10) default to NFC and are left unconnected.
+Pins **14, 15** (P0.24/P1.04) are the **on-module accelerometer I²C** —
+left unconnected so the carrier never drives them. The remaining
+castellations (USB_N/P, the DW3110 GPIOs, spare P0.x) are typed
+`no_connect` in the symbol — those pads float on this board by design.
+There is no EN1/EN2 GPIO: the BQ24074 mode is hard-strapped (R11/R12),
+which was always the plan — the earlier "EN1/EN2" pins were a
+placeholder-symbol artefact, now gone.
 
 The DW3110 UWB radio talks to the nRF52833 over an **on-module** SPI bus
 — not exposed, not our concern.
