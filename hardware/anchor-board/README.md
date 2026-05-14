@@ -227,10 +227,14 @@ Populated on **every** board (see §1).
 | U7 | Winbond W25Q128JVSIQ | 16 MB | Disconnect-cache flash (hub firmware uses it; dumb firmware leaves it idle) |
 | U8 | TI TPS22916C | — | Load switch — gates flash VCC in deep sleep (~1 µA saving) |
 | C15 | Capacitor 0402 | 100 nF | W25Q128 VCC decoupling |
-| C16 | Capacitor 0402 | 1 µF | TPS22916 output cap |
-| C17 | Capacitor 0402 | 1 nF | TPS22916 CT — turn-on slew-rate control |
+| C16 | Capacitor 0603 | 1 µF | TPS22916 output cap |
 | R15 | Resistor 0402 | 10 kΩ | /CS pull-up (idle-high during MCU boot) |
 | R16, R17 | Resistor 0402 | 10 kΩ | /WP and /HOLD pull-ups (single-SPI mode, tied inactive) |
+
+> **C17 removed during schematic capture.** The original list specced a
+> "TPS22916 CT" slew-rate cap, but the TPS22916 (4-pin WCSP — VIN / VOUT
+> / GND / ON) has **no CT pin**; turn-on slew rate is fixed by the part
+> variant (the "C" suffix = slow timing), not an external cap.
 
 ### 4.7 User I/O — RGB LED + power button
 

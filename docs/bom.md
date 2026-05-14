@@ -193,6 +193,7 @@ The DWM3001C module is the dominant cost driver (~65%). At high volume, custom i
 | 2026-05-14 | PAI anchor is now explicitly the same board as the stump anchor (connector swap), not "same electronics" | One unified board design across all 8 anchors. |
 | 2026-05-14 | USB ESD: TPD4S014 → TPD2E2U06 (CC lines) + a VBUS TVS diode | TPD4S014 is a USB data-port protector — wrong fit for this sink-only, power-only port. From anchor-board schematic capture, README §4.2. |
 | 2026-05-14 | Added BQ24074 ILIM + ITERM program resistors (R24/R25) to the passives list | The original README §4.3 charger network omitted both program pins. From schematic capture. |
+| 2026-05-14 | Removed C17 (TPS22916 "CT" cap) from the passives list | The TPS22916 (4-pin WCSP) has no CT pin — slew rate is set by the part variant. From schematic capture, README §4.6. |
 | 2026-05-13 | Initial BOM | First active version, captures architecture decisions through May 13, 2026 |
 | 2026-05-13 | 32 kHz crystal added to all anchors | RTC accuracy for BLE timing + log timestamps |
 | 2026-05-13 | Flash: W25Q256 → W25Q128 | Disconnect-cache model (phone is source of truth), 16 MB plenty |
