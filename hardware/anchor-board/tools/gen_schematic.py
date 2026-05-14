@@ -29,6 +29,7 @@ KiCad symbol library path can be overridden with $KICAD_SYMBOL_DIR.
 import os
 import re
 import uuid
+from collections import defaultdict
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _BOARD = os.path.normpath(os.path.join(_HERE, ".."))
@@ -233,19 +234,92 @@ comps = [
     ("J7", "Connector_Generic:Conn_01x02", "Reset/boot strap",
      "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical", 320.04, 240.03, (320.04, 234.0), (320.04, 245.0)),
 ]
+
+# ---- section grouping & placement -------------------------------------
+# Each functional block gets its own framed area on the sheet. The comps
+# above keep their *relative* layout within a block; here the whole block
+# is translated so its parts cluster together, instead of being scattered.
+SECTION_REFS = {
+    "4.1": ["U1", "C1", "C2", "C3", "R1", "C4"],
+    "4.2": ["J1", "U2", "R2", "R3", "D2", "C5", "C6", "R4", "C7"],
+    "4.3": ["U3", "C8", "R6", "R25", "R5", "R24", "R7", "R8",
+            "C9", "C10", "R9", "R10", "R11", "R12"],
+    "4.4": ["BT1", "U4", "U5", "R13", "C11", "R14"],
+    "4.5": ["U6", "C12", "C13", "C14", "FB1"],
+    "4.6": ["U7", "U8", "C15", "C16", "R15", "R16", "R17"],
+    "4.7": ["D1", "R18", "R19", "R20", "SW1", "R21", "C18"],
+    "4.8": ["R22", "R23", "C19"],
+    "4.9": ["TP1", "TP2", "TP3", "TP4", "TP5", "TP6", "C20"],
+    "7": ["J2", "J8", "J3", "J4", "J5", "R26", "J6", "J7"],
+}
+SECTION_TITLE = {
+    "4.1": "4.1  DWM3001C module + decoupling",
+    "4.2": "4.2  USB-C input + ESD",
+    "4.3": "4.3  BQ24074 Li-ion charger",
+    "4.4": "4.4  Cell protection + 18650",
+    "4.5": "4.5  TLV75530 3.0 V LDO",
+    "4.6": "4.6  SPI flash + load switch",
+    "4.7": "4.7  RGB LED + power button",
+    "4.8": "4.8  VBAT sense divider",
+    "4.9": "4.9  Rail test points",
+    "7": "7  Break-off dev rail",
+}
+# target (min component-x, min component-y) for each block — on the 1.27
+# grid. Roughly follows power flow: input top-left, rails across the top,
+# the module centre, peripherals down the right, dev aids along the bottom.
+SECTION_TARGET = {
+    "4.2": (50.8, 27.94),    # USB-C input        — top left
+    "4.3": (140.97, 27.94),  # charger            — top middle
+    "4.5": (256.54, 27.94),  # LDO                — top right
+    "4.6": (256.54, 78.74),  # flash              — right, below LDO
+    "4.4": (25.4, 119.38),   # cell protection    — middle left
+    "4.1": (140.97, 119.38), # DWM3001C module    — centre
+    "4.7": (256.54, 142.24), # RGB LED + button   — right, below flash
+    "7": (38.1, 203.2),      # break-off dev rail — bottom left
+    "4.8": (140.97, 205.74), # VBAT sense divider — bottom middle
+    "4.9": (140.97, 252.73), # rail test points   — bottom middle, lower
+}
+comp_section = {ref: sec for sec, refs in SECTION_REFS.items() for ref in refs}
+assert set(comp_section) == {c[0] for c in comps}, "SECTION_REFS / comps mismatch"
+
+_sec_min = {}
+for _c in comps:
+    _m = _sec_min.setdefault(comp_section[_c[0]], [_c[4], _c[5]])
+    _m[0] = min(_m[0], _c[4])
+    _m[1] = min(_m[1], _c[5])
+_sec_delta = {_s: (round(SECTION_TARGET[_s][0] - _m[0], 4),
+                   round(SECTION_TARGET[_s][1] - _m[1], 4))
+              for _s, _m in _sec_min.items()}
+
+
+def _shift(sec, x, y):
+    dx, dy = _sec_delta[sec]
+    return (round(x + dx, 4), round(y + dy, 4))
+
+
+comps = [(ref, lib, val, fp,
+          *_shift(comp_section[ref], x, y),
+          _shift(comp_section[ref], *rat), _shift(comp_section[ref], *vat))
+         for (ref, lib, val, fp, x, y, rat, vat) in comps]
 comp_xy = {c[0]: (c[4], c[5]) for c in comps}
 comp_lib = {c[0]: c[1] for c in comps}
 
 # Every pin coordinate of every component — a label's stub must never
 # touch one of these (other than its own), or it would short two nets.
+# `sec_pts` collects, per section, every point used to size its frame.
 ALL_PIN_COORDS = set()
+sec_pts = defaultdict(list)
 for _ref in comp_xy:
     _cx, _cy = comp_xy[_ref]
     for _lx, _ly in PINS[comp_lib[_ref]].values():
-        ALL_PIN_COORDS.add((round(_cx + _lx, 4), round(_cy - _ly, 4)))
+        _p = (round(_cx + _lx, 4), round(_cy - _ly, 4))
+        ALL_PIN_COORDS.add(_p)
+        sec_pts[comp_section[_ref]].append(_p)
 
 # coord -> direction the pin faces, outward from its component ('L'/'R'/'U'/'D')
 _pin_dir = {}
+# coord -> the section the pin's component belongs to
+_pin_section = {}
 
 
 def pin_xy(ref, num):
@@ -258,29 +332,42 @@ def pin_xy(ref, num):
         _pin_dir[p] = "L" if dx < 0 else "R"
     else:
         _pin_dir[p] = "U" if dy < 0 else "D"  # KiCad y grows downward
+    _pin_section[p] = comp_section[ref]
     return p
 
 
-wires = [
+# §4.1 is captured with explicit wires/junctions/power-ports (not labels);
+# its hand-drawn connectivity is translated by the §4.1 block delta too.
+_d41x, _d41y = _sec_delta["4.1"]
+wires = [(round(x1 + _d41x, 4), round(y1 + _d41y, 4),
+          round(x2 + _d41x, 4), round(y2 + _d41y, 4)) for (x1, y1, x2, y2) in [
     (127.0, 77.47, 177.8, 77.47), (152.4, 85.09, 177.8, 85.09),
     (177.8, 85.09, 177.8, 90.17), (127.0, 125.73, 127.0, 130.81),
     (109.22, 71.12, 109.22, 85.09), (96.52, 81.28, 109.22, 81.28),
     (109.22, 63.5, 109.22, 57.15), (96.52, 88.9, 96.52, 93.98),
-]
-junctions = [
+]]
+junctions = [(round(x + _d41x, 4), round(y + _d41y, 4)) for (x, y) in [
     (152.4, 77.47), (165.1, 77.47), (139.7, 77.47),
     (165.1, 85.09), (177.8, 85.09), (109.22, 81.28), (160.02, 85.09),
-]
-ports = [
+]]
+ports = [(rf, lb, vl, round(x + _d41x, 4), round(y + _d41y, 4),
+          (round(vx + _d41x, 4), round(vy + _d41y, 4)))
+         for (rf, lb, vl, x, y, (vx, vy)) in [
     ("#PWR01", "infinity-stumps:3V0", "3V0", 139.7, 77.47, (142.24, 76.2)),
     ("#PWR02", "infinity-stumps:3V0", "3V0", 109.22, 57.15, (111.76, 55.88)),
     ("#PWR03", "power:GND", "GND", 127.0, 130.81, (127.0, 134.62)),
     ("#PWR04", "power:GND", "GND", 177.8, 90.17, (177.8, 93.98)),
     ("#PWR05", "power:GND", "GND", 96.52, 93.98, (96.52, 97.79)),
     ("#FLG02", "power:PWR_FLAG", "PWR_FLAG", 160.02, 85.09, (160.02, 80.62)),
-]
+]]
 # label tuples: (name, x, y, angle, justify)
-labels = [("nRESET", 109.22, 78.74, 0, "left")]
+labels = [(nm, round(x + _d41x, 4), round(y + _d41y, 4), a, j)
+          for (nm, x, y, a, j) in [("nRESET", 109.22, 78.74, 0, "left")]]
+# §4.1's hand-placed ports/labels also count toward its frame
+for _p in ports:
+    sec_pts["4.1"].append((_p[3], _p[4]))
+for _p in labels:
+    sec_pts["4.1"].append((_p[1], _p[2]))
 stub_wires = []
 _stub_pts = set()  # every grid point covered by a placed stub wire
 no_connects = []
@@ -340,9 +427,12 @@ def add_port(lib, val, x, y):
         ref = "#FLG%02d" % _flg[0]; _flg[0] += 1
     else:
         ref = "#PWR%02d" % _pn[0]; _pn[0] += 1
+    sec = _pin_section.get((x, y))
     s = _find_stub(x, y)
     if s is not None:
         x, y = s[0], s[1]
+    if sec:
+        sec_pts[sec].append((x, y))
     ports.append((ref, lib, val, x, y, (x + 2.5, y - 1.27)))
 
 
@@ -353,17 +443,25 @@ def add_label(name, x, y):
     from the component, so text clears the body and its neighbours.
     """
     on_grid(x, y, "label %s" % name)
+    sec = _pin_section.get((x, y))
     s = _find_stub(x, y)
     if s is None:  # not a pin coord (e.g. a label dropped onto a drawn wire)
         labels.append((name, x, y, 0, "left"))
         return
     ex, ey, d = s
     labels.append((name, ex, ey, 0, _JUST[d]))
+    if sec:  # include the far end of the text so the frame encloses it
+        w = len(name) * 1.0
+        sec_pts[sec].append((ex - w, ey) if _JUST[d] == "right" else (ex + w, ey))
+        sec_pts[sec].append((ex, ey))
 
 
 def add_nc(x, y):
     on_grid(x, y, "no_connect")
     no_connects.append((x, y))
+    sec = _pin_section.get((x, y))
+    if sec:
+        sec_pts[sec].append((x, y))
 
 
 # ----- §4.2 USB-C input + ESD -----
@@ -589,6 +687,30 @@ P = ['(kicad_sch', '\t(version 20250114)', '\t(generator "eeschema")',
      '\t)', '\t(lib_symbols']
 P += lib_syms
 P.append('\t)')
+
+# ---- section frames + titles ----
+# A dashed box + heading around each functional block, sized to the
+# block's components, stubs and labels (collected in sec_pts).
+FRAME_PAD = 5.08
+for _sec in SECTION_REFS:
+    _pts = sec_pts.get(_sec)
+    if not _pts:
+        continue
+    _x1 = round(min(p[0] for p in _pts) - FRAME_PAD, 2)
+    _y1 = round(min(p[1] for p in _pts) - FRAME_PAD, 2)
+    _x2 = round(max(p[0] for p in _pts) + FRAME_PAD, 2)
+    _y2 = round(max(p[1] for p in _pts) + FRAME_PAD, 2)
+    P += ['\t(polyline', '\t\t(pts',
+          '\t\t\t(xy %s %s) (xy %s %s) (xy %s %s) (xy %s %s) (xy %s %s)'
+          % (_x1, _y1, _x2, _y1, _x2, _y2, _x1, _y2, _x1, _y1),
+          '\t\t)', '\t\t(stroke (width 0.2) (type dash))',
+          '\t\t(uuid "%s")' % u(), '\t)']
+    P += ['\t(text "%s"' % SECTION_TITLE[_sec],
+          '\t\t(exclude_from_sim no)',
+          '\t\t(at %s %s 0)' % (round(_x1 + 1.0, 2), round(_y1 - 1.5, 2)),
+          '\t\t(effects', '\t\t\t(font (size 2.5 2.5))',
+          '\t\t\t(justify left bottom)', '\t\t)',
+          '\t\t(uuid "%s")' % u(), '\t)']
 
 for (x1, y1, x2, y2) in wires + stub_wires:
     P += ['\t(wire', '\t\t(pts', '\t\t\t(xy %s %s) (xy %s %s)' % (x1, y1, x2, y2),
