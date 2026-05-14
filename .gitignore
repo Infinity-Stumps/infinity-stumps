@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+.venv/
+venv/
+outputs/*
+!outputs/.gitkeep
+!outputs/*.png
+backups/
+.vscode/
+.idea/
+.DS_Store
