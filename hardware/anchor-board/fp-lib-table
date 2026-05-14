@@ -1,0 +1,10 @@
+(fp_lib_table
+	(version 7)
+	(lib
+		(name "infinity-stumps")
+		(type "KiCad")
+		(uri "${KIPRJMOD}/anchor_board.pretty")
+		(options "")
+		(descr "Infinity Stumps anchor-board project footprints (DWM3001C + connectors)")
+	)
+)

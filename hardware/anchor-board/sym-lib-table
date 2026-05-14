@@ -1,0 +1,10 @@
+(sym_lib_table
+	(version 7)
+	(lib
+		(name "infinity-stumps")
+		(type "KiCad")
+		(uri "${KIPRJMOD}/anchor_board.kicad_sym")
+		(options "")
+		(descr "Infinity Stumps anchor-board project symbols (DWM3001C + power rails)")
+	)
+)

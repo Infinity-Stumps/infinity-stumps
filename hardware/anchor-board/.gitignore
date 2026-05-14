@@ -1,0 +1,6 @@
+# KiCad local / generated files - see references/workflows.md
+*-backups/
+*.kicad_prl
+fp-info-cache
+# KiCad editor lock files (~<file>.lck) - present while the project is open
+~*.lck
