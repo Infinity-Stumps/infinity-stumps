@@ -1,0 +1,184 @@
+(footprint "X2SON-4_1x1mm_P0.5mm"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "TI X2SON-4 (DQN0004A), 1.0 x 1.0 x 0.4 mm, 0.5 mm pitch, no thermal pad. Used for TLV75530PDQNR LDO. Land pattern approximate - verify against TI DQN0004A before fab.")
+	(tags "X2SON DQN TLV755P")
+	(property "Reference" "U**"
+		(at 0 -1.2 0)
+		(layer "F.SilkS")
+		(uuid "08021fb0-4161-434b-ab9b-1f5813a9d2b7")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.1)
+			)
+		)
+	)
+	(property "Value" "X2SON-4_1x1mm_P0.5mm"
+		(at 0 1.2 0)
+		(layer "F.Fab")
+		(uuid "3c511749-3bd6-47e7-a025-4cf7244d0536")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.1)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "1adf15ad-b06c-411d-9f59-c92617913c8e")
+		(effects
+			(font
+				(size 1 1)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "21a45d74-201c-48da-946c-2b8dcd898e77")
+		(effects
+			(font
+				(size 1 1)
+			)
+		)
+	)
+	(attr smd)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_line
+		(start -0.85 0.65)
+		(end -0.85 -0.65)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "3fc13224-1b9e-4588-8b66-9b14567fbdad")
+	)
+	(fp_circle
+		(center -0.95 0.35)
+		(end -0.9 0.35)
+		(stroke
+			(width 0.2)
+			(type solid)
+		)
+		(fill yes)
+		(layer "F.SilkS")
+		(uuid "0aa180d2-22cd-4209-aa6e-6f4345ac7ac7")
+	)
+	(fp_line
+		(start -0.95 -0.85)
+		(end 0.95 -0.85)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "ad24b15a-92dd-4b4f-bdcc-0b2f8a46d777")
+	)
+	(fp_line
+		(start -0.95 0.85)
+		(end -0.95 -0.85)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "a54d1dcd-5f21-4da3-a320-6715ed83f0b5")
+	)
+	(fp_line
+		(start 0.95 -0.85)
+		(end 0.95 0.85)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "5f62cfae-2184-4b74-8bed-866acf69e146")
+	)
+	(fp_line
+		(start 0.95 0.85)
+		(end -0.95 0.85)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "f3a7f716-3883-4687-96bb-756e957529bd")
+	)
+	(fp_line
+		(start -0.5 -0.5)
+		(end 0.5 -0.5)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "d263c284-6326-466f-aa12-7f64824cfab5")
+	)
+	(fp_line
+		(start -0.5 0.5)
+		(end -0.5 -0.5)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "326067c1-48af-47e9-8d5b-b97d891c63a3")
+	)
+	(fp_line
+		(start 0.5 -0.5)
+		(end 0.5 0.5)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "318cca0a-14a2-487c-9d38-dcb816c2ba42")
+	)
+	(fp_line
+		(start 0.5 0.5)
+		(end -0.5 0.5)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "f08af764-3959-43bd-9baa-c4145e6aeda7")
+	)
+	(pad "1" smd roundrect
+		(at -0.475 0.25)
+		(size 0.45 0.28)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(uuid "3ad1d84c-4635-4316-8148-40313c0e04ef")
+	)
+	(pad "2" smd roundrect
+		(at -0.475 -0.25)
+		(size 0.45 0.28)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(uuid "b212baf2-2a8e-40a3-9e9a-9debea2ece2a")
+	)
+	(pad "3" smd roundrect
+		(at 0.475 -0.25)
+		(size 0.45 0.28)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(uuid "a03f23b9-0122-4d8f-a331-ee3d717938e0")
+	)
+	(pad "4" smd roundrect
+		(at 0.475 0.25)
+		(size 0.45 0.28)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(uuid "fcd20d4d-653b-4574-9615-d6cf4d94afb6")
+	)
+	(embedded_fonts no)
+)

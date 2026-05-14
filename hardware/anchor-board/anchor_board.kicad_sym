@@ -1096,7 +1096,7 @@
 			)
 		)
 		# DQN (X2SON-4) pin map per TLV755P datasheet Table 4-1:
-		# OUT=1, GND=2, EN=3, IN=4, thermal pad=5 (internally tied to GND).
+		# OUT=1, GND=2, EN=3, IN=4. X2SON-4 has no thermal pad.
 		(symbol "TLV75530_0_1"
 			(rectangle
 				(start -7.62 5.08)
@@ -1176,24 +1176,6 @@
 					)
 				)
 				(number "2"
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-			)
-			(pin passive line
-				(at 0 -10.16 90)
-				(length 5.08)
-				(name "PAD"
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(number "5"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -1857,7 +1839,7 @@
 				(name "SHIELD"
 					(effects (font (size 1.27 1.27)))
 				)
-				(number "S1"
+				(number "SH"
 					(effects (font (size 1.27 1.27)))
 				)
 			)
@@ -1870,14 +1852,14 @@
 		(in_bom yes)
 		(on_board yes)
 		(property "Reference" "U"
-			(at 0 5.08 0)
+			(at 0 7.62 0)
 			(effects (font (size 1.27 1.27)))
 		)
 		(property "Value" "TPD2E2U06"
-			(at 0 -5.08 0)
+			(at 0 -12.7 0)
 			(effects (font (size 1.27 1.27)))
 		)
-		(property "Footprint" "infinity-stumps:TPD2E2U06_SC70"
+		(property "Footprint" "infinity-stumps:SOT-563"
 			(at 0 0 0)
 			(hide yes)
 			(effects (font (size 1.27 1.27)))
@@ -1887,7 +1869,7 @@
 			(hide yes)
 			(effects (font (size 1.27 1.27)))
 		)
-		(property "Description" "TI TPD2E2U06 dual-channel low-cap (1.5 pF) TVS ESD array, SC70-3 (DCK). Used on the USB-C CC1/CC2 lines."
+		(property "Description" "TI TPD2E2U06 dual-channel low-cap (1.5 pF) TVS ESD array, 6-pin SOT-563 (DRL). IO1=3, IO2=5, GND=4; pins 1/2/6 NC. Used on the USB-C CC1/CC2 lines."
 			(at 0 0 0)
 			(hide yes)
 			(effects (font (size 1.27 1.27)))
@@ -1899,40 +1881,70 @@
 		)
 		(symbol "TPD2E2U06_0_1"
 			(rectangle
-				(start -8.89 2.54)
-				(end 8.89 -2.54)
+				(start -8.89 5.08)
+				(end 8.89 -5.08)
 				(stroke (width 0.254) (type default))
 				(fill (type background))
 			)
 		)
 		(symbol "TPD2E2U06_1_1"
 			(pin passive line
-				(at -13.97 0.0 0)
+				(at -13.97 2.54 0)
 				(length 5.08)
 				(name "IO1"
+					(effects (font (size 1.27 1.27)))
+				)
+				(number "3"
+					(effects (font (size 1.27 1.27)))
+				)
+			)
+			(pin passive line
+				(at -13.97 -2.54 0)
+				(length 5.08)
+				(name "IO2"
+					(effects (font (size 1.27 1.27)))
+				)
+				(number "5"
+					(effects (font (size 1.27 1.27)))
+				)
+			)
+			(pin power_in line
+				(at 0.0 -10.16 90)
+				(length 5.08)
+				(name "GND"
+					(effects (font (size 1.27 1.27)))
+				)
+				(number "4"
+					(effects (font (size 1.27 1.27)))
+				)
+			)
+			(pin no_connect line
+				(at 13.97 2.54 180)
+				(length 5.08)
+				(name "NC"
 					(effects (font (size 1.27 1.27)))
 				)
 				(number "1"
 					(effects (font (size 1.27 1.27)))
 				)
 			)
-			(pin passive line
+			(pin no_connect line
 				(at 13.97 0.0 180)
 				(length 5.08)
-				(name "IO2"
+				(name "NC"
 					(effects (font (size 1.27 1.27)))
 				)
 				(number "2"
 					(effects (font (size 1.27 1.27)))
 				)
 			)
-			(pin power_in line
-				(at 0.0 -7.62 90)
+			(pin no_connect line
+				(at 13.97 -2.54 180)
 				(length 5.08)
-				(name "GND"
+				(name "NC"
 					(effects (font (size 1.27 1.27)))
 				)
-				(number "3"
+				(number "6"
 					(effects (font (size 1.27 1.27)))
 				)
 			)
