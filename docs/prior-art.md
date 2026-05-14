@@ -103,7 +103,7 @@ because of this.
 - Detect bounce from ADXL372 impact spike (we already log this)
 - Add a soft constraint to `fit_trajectory`: residual `(z(t_bounce) - 0)² / σ_z²`
 - Should improve Z-axis error specifically and tighten LBW predictions
-- Effort: ~1 day in `src/infinity_stumps/solver.py`
+- Effort: ~1 day in `simulation/src/infinity_stumps/solver.py`
 
 ### 2. AoA / PDoA fusion (HIGH priority)
 

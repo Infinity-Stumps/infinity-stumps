@@ -6,8 +6,12 @@ on:
   pull_request:
 
 jobs:
-  test:
+  simulation:
+    name: simulation (Python)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: simulation
     strategy:
       fail-fast: false
       matrix:
@@ -21,6 +25,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
+          cache-dependency-path: simulation/pyproject.toml
 
       - name: Install
         run: pip install -e ".[dev]"

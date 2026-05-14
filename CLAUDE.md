@@ -82,7 +82,7 @@ else is engineering around it.
    UWB with no dropouts). v2 could revisit with tightly-coupled
    fusion (sim 06b — not built).
 6. Analytics: **physics-EKF with RTS smoother**. The state-space
-   estimator (`src/infinity_stumps/ekf.py`) runs a continuous EKF over
+   estimator (`simulation/src/infinity_stumps/ekf.py`) runs a continuous EKF over
    (position, velocity, spin) using the drag+Magnus+gravity ODE for
    prediction and per-anchor TWR range measurements for updates. A
    Rauch-Tung-Striebel backward pass refines past estimates using
@@ -130,7 +130,7 @@ else is engineering around it.
 
 ## What to focus on
 
-1. **LBW prediction module** (`sims/sim_lbw.py`, `src/infinity_stumps/lbw.py`):
+1. **LBW prediction module** (`simulation/sims/sim_lbw.py`, `simulation/src/infinity_stumps/lbw.py`):
    forward extrapolation + uncertainty ellipse at stump line + HIT/MISS/
    UMPIRE'S CALL verdict. Target: beat iBall's 22 cm 3D / 9.9 cm X-axis.
 2. **iBall borrowables** (see `docs/prior-art.md`):
@@ -142,12 +142,19 @@ else is engineering around it.
      iBall's trick uses magnetometer + cone-fitting instead.
 3. Phase 1+2 firmware bring-up when the 3× DWM3001CDK boards arrive.
 
-## Coding conventions
+## Repository layout
+
+This is a monorepo. The Python simulation work lives in `simulation/`;
+`firmware/`, `hardware/`, and `app/` hold the anchor firmware, PCB/
+mechanical design, and mobile app respectively (see each directory's
+README). System-level docs stay in `docs/` at the repo root.
+
+## Coding conventions (simulation/)
 
 - Python 3.10+, numpy / scipy / matplotlib only
 - Type hints on public functions
-- Each `sims/NN_*.py` is standalone, writes to `outputs/`
-- Tests in `tests/`, run with `pytest -q`
+- Each `simulation/sims/NN_*.py` is standalone, writes to `simulation/outputs/`
+- Tests in `simulation/tests/`, run with `pytest -q` from `simulation/`
 
 ## Findings to remember
 

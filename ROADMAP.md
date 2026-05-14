@@ -14,7 +14,7 @@ needs a recursive estimator that only sees past samples. If precision
 loss is 2× we're fine, if 10× the real-time product is broken.
 
 **Prompt:**
-Read CLAUDE.md and src/infinity_stumps/. Create sims/04_sliding_window.py:
+Read CLAUDE.md and simulation/src/infinity_stumps/. Create simulation/sims/04_sliding_window.py:
 
 Reuse the trajectory generator and noise model from sim 03.
 Implement a sliding-window physics-fit estimator that, at each time t,
@@ -35,7 +35,7 @@ the Kalman is competitive with the sliding-window fit.
 in-stride, umpire, keeper, slips intermittently blocking paths.
 
 **Prompt:**
-Build sims/05_multipath_occlusion.py:
+Build simulation/sims/05_multipath_occlusion.py:
 
 Add 6 cylindrical occluders (bowler, umpire, keeper, 2 slips, gully)
 at realistic positions. Anchor-ball rays within 0.4 m of an occluder
@@ -56,7 +56,7 @@ degradation factor, (c) whether 8 anchors is still enough.
 parameter space and bridge UWB dropouts.
 
 **Prompt:**
-Build sims/06_imu_fusion.py:
+Build simulation/sims/06_imu_fusion.py:
 
 Model a 6-axis IMU. Accelerometer reads body-frame accel + gravity
 with σ_a = 0.05 m/s². Gyro reads body-frame angular rate with
@@ -77,7 +77,7 @@ or just nice-to-have.
 ### Sim 07 — Anchor sync error budget
 
 **Prompt:**
-Build sims/07_sync_budget.py. Each anchor has its own clock with crystal
+Build simulation/sims/07_sync_budget.py. Each anchor has its own clock with crystal
 drift (20 ppm, random-walk-plus-bias). Inter-anchor TWR at 10 Hz produces
 noisy clock-offset observations (σ = 30 ps). Linear regression per anchor
 predicts the relationship to master. When a ball beacon arrives, each
@@ -90,7 +90,7 @@ Exit: clear answer on sync rate / oscillator class for production spec.
 ### Sim 08 — Anchor self-localisation
 
 **Prompt:**
-Build sims/08_self_localization.py. Place anchors at nominal positions
+Build simulation/sims/08_self_localization.py. Place anchors at nominal positions
 + random perturbations (~50 mm 1σ). Use known constraint distances
 (stump width, PAI lateral spread, pitch length) plus measured pairwise
 UWB ranges to estimate positions in a self-consistent frame. Run with
@@ -103,7 +103,7 @@ degrades by <10% vs perfect-knowledge geometry.
 ### Sim 09 — Scheduling and airtime
 
 **Prompt:**
-Build sims/09_scheduling.py. Time-slotted airtime with 50 µs slots.
+Build simulation/sims/09_scheduling.py. Time-slotted airtime with 50 µs slots.
 Inter-anchor sync: 28 exchanges every 100 ms. Ball beacons: every 2 ms.
 Account for FCC/ETSI UWB duty-cycle limits (~5%). Stats on packet loss,
 collision rate, latency.

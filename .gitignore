@@ -1,15 +1,24 @@
+# Python
 __pycache__/
 *.pyc
 *.egg-info/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 build/
 dist/
 .venv/
 venv/
-outputs/*
-!outputs/.gitkeep
-!outputs/*.png
+
+# Simulation outputs — keep the committed result figures, ignore the rest
+simulation/outputs/*
+!simulation/outputs/.gitkeep
+!simulation/outputs/*.png
+
+# Working backups
 backups/
+
+# Editors / OS
 .vscode/
 .idea/
 .DS_Store

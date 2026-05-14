@@ -3,9 +3,22 @@
 Thanks for your interest. This project is open by design — see
 [`docs/about.md`](docs/about.md) for the why. Contributions are welcome.
 
-## Setup
+## Repository layout
 
-Requires Python 3.10+.
+This is a monorepo with one directory per discipline:
+
+- `simulation/` — the Python estimation + LBW pipeline (this is where
+  Phase 0 work lives, and what most of this guide covers)
+- `firmware/` — anchor and ball-tag firmware (C / nRF Connect SDK)
+- `hardware/` — KiCad PCB projects and enclosure design
+- `app/` — the mobile app (iOS first)
+- `docs/` — system-level architecture, BOM, prior-art strategy
+
+Each directory has its own README with the specifics.
+
+## Setup (simulation)
+
+Requires Python 3.10+. From the `simulation/` directory:
 
 ```bash
 make install
@@ -18,7 +31,7 @@ pre-commit) and installs the pre-commit hooks.
 
 1. Branch off `main`.
 2. Make your change.
-3. Run the gate:
+3. Run the gate (from `simulation/`):
    ```bash
    make check        # lint + typecheck + test — must pass
    ```
@@ -29,14 +42,14 @@ ruff on every commit, so most style issues never reach a PR.
 
 ## Tests
 
-- Tests live in `tests/`, one file per `src/` module.
+- Tests live in `simulation/tests/`, one file per `simulation/src/` module.
 - Shared fixtures (a standard delivery, anchor layouts, a seeded RNG) are in
-  `tests/conftest.py` — prefer them over rebuilding setup in each test.
+  `simulation/tests/conftest.py` — prefer them over rebuilding setup in each test.
 - Anything noise-driven must use the seeded `rng` fixture so it is
   deterministic.
-- New behaviour in `src/` needs a test. New physics or estimator code should
-  be checked against an analytic result or a known-good reference where one
-  exists.
+- New behaviour in `simulation/src/` needs a test. New physics or estimator
+  code should be checked against an analytic result or a known-good reference
+  where one exists.
 
 ## Style
 
@@ -44,8 +57,8 @@ ruff on every commit, so most style issues never reach a PR.
 - Public functions take type hints.
 - Comments explain *why*, not *what*. The codebase favours short, specific
   comments over restating the code.
-- Keep simulation scripts in `sims/` self-contained: each one runs
-  standalone and writes its figure to `outputs/`.
+- Keep simulation scripts in `simulation/sims/` self-contained: each one
+  runs standalone and writes its figure to `simulation/outputs/`.
 
 ## Decisions
 

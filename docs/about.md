@@ -91,7 +91,7 @@ This project is built to be as open as physically possible:
 ### Algorithms
 
 - Every line of the EKF, RTS smoother, LBW verdict logic — published
-- Simulation harnesses (`sims/`) demonstrate the architecture works
+- Simulation harnesses (`simulation/sims/`) demonstrate the architecture works
 - All sim outputs (per-delivery error analyses, confusion matrices,
   N=30 boxplots) committed to the repo as PNGs with their generating
   code
@@ -148,13 +148,13 @@ this repo's git history serves as defensive prior art:
    continuous Extended Kalman Filter over (position, velocity, spin)
    using a drag+Magnus+gravity ODE, with backward Rauch-Tung-Striebel
    smoothing applied for replay quality.
-   (`src/infinity_stumps/ekf.py`, May 2026)
+   (`simulation/src/infinity_stumps/ekf.py`, May 2026)
 3. **DRS-style verdict with uncertainty ellipse from EKF covariance
    propagation** — applying the EKF's smoothed covariance through a
    numerical Jacobian of the forward-extrapolation function to produce
    a 95% confidence ellipse at the stump line, classified against the
    stump rectangle for HIT / MISS / UMPIRE'S CALL verdict.
-   (`src/infinity_stumps/lbw.py`, May 2026)
+   (`simulation/src/infinity_stumps/lbw.py`, May 2026)
 4. **Phone-side disconnect-cache reconciliation protocol** — UWB
    anchor (hub) maintains a sequence-numbered append-only log; phone
    tracks `highest_seq_received` and requests gap-fill on reconnect.
@@ -167,7 +167,7 @@ this repo's git history serves as defensive prior art:
 6. **TWR-staggered EKF updates handling within-cycle motion** —
    propagating the EKF state by ~150 µs per anchor measurement
    within a single ranging cycle to account for ball motion across
-   the staggered TWR exchange. (`src/infinity_stumps/ekf.py`, May 2026)
+   the staggered TWR exchange. (`simulation/src/infinity_stumps/ekf.py`, May 2026)
 7. **iBall-borrow techniques applied to multi-anchor cricket UWB:**
    Bouncing constraint, AoA / PDoA fusion roadmap, DoP-weighted
    residuals, magnetometer cone-fitting for spin —
@@ -206,7 +206,7 @@ multiple levels of formality.
 
 ## License
 
-- **Software** (`src/`, `sims/`, etc.): Apache License 2.0
+- **Software** (`src/`, `simulation/sims/`, etc.): Apache License 2.0
 - **Hardware designs** (PCB / mechanical / enclosure files):
   CERN Open Hardware License Strongly Reciprocal (CERN-OHL-S) v2
 - **Documentation** (`docs/`, `README.md`, etc.):
@@ -243,7 +243,7 @@ A few clarifications:
 ## How to use this
 
 If you're an **academic researcher** wanting to build on this:
-clone the repo, run `sims/sim_lbw.py`, cite the prior-art document.
+clone the repo, run `simulation/sims/sim_lbw.py`, cite the prior-art document.
 
 If you're a **hardware hacker / maker** wanting to build a kit:
 the BOM (`docs/bom.md`) and architecture (`docs/architecture.md`)

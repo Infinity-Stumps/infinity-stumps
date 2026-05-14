@@ -152,7 +152,7 @@ the off-season. ~10-year service life with annual deep cycles.
 | **A7** | **Batter off stump** | **680** | **Top of stump** | **Hub stump** |
 | A8 | Batter leg stump | 680 | Top of stump | Dumb peer |
 
-Constants in `src/infinity_stumps/geometry.py`:
+Constants in `simulation/src/infinity_stumps/geometry.py`:
 - `PITCH_HL = 10.06 m` (half pitch length, ICC standard 22 yards)
 - `PAI_X = 7.62 m` (Protected Area Indicator longitudinal offset)
 - `PAI_Y = 1.53 m` (PAI lateral offset)
@@ -418,7 +418,7 @@ The data model is:
 
 ### 6.2 State estimation: EKF + RTS smoother
 
-**Module:** `src/infinity_stumps/ekf.py` → `TrajectoryEKF`
+**Module:** `simulation/src/infinity_stumps/ekf.py` → `TrajectoryEKF`
 
 **State vector:** 9-dimensional
 ```
@@ -428,7 +428,7 @@ x = [px, py, pz, vx, vy, vz, ωx, ωy, ωz]
        (m)       (m/s)       (rad/s)
 ```
 
-**Dynamics model:** drag + Magnus + gravity ODE (`src/infinity_stumps/physics.py`)
+**Dynamics model:** drag + Magnus + gravity ODE (`simulation/src/infinity_stumps/physics.py`)
 ```
 dp/dt = v
 dv/dt = -g·ẑ
@@ -491,7 +491,7 @@ systematic error per cycle. The EKF avoids this.
 
 ### 6.4 LBW prediction (post-impact)
 
-**Module:** `src/infinity_stumps/lbw.py`
+**Module:** `simulation/src/infinity_stumps/lbw.py`
 
 Triggered when the ball's ADXL372 detects pad impact (or by user
 selecting a moment in replay):
@@ -535,7 +535,7 @@ All values in `sim_realistic.py` / `sim_ekf.py` constants section.
 
 ## 7. Software Modules
 
-### 7.1 `src/infinity_stumps/` — Python reference / sim implementation
+### 7.1 `simulation/src/infinity_stumps/` — Python reference / sim implementation
 
 | Module | Purpose |
 |---|---|
@@ -548,9 +548,9 @@ All values in `sim_realistic.py` / `sim_ekf.py` constants section.
 | `lbw.py` | LBW verdict logic, ellipse computation, cricket-rule preconditions |
 | `plotting.py` | Matplotlib visualisation helpers |
 
-### 7.2 `sims/` — Validation simulations
+### 7.2 `simulation/sims/` — Validation simulations
 
-Each sim is standalone, writes outputs to `outputs/*.png`. See
+Each sim is standalone, writes outputs to `simulation/outputs/*.png`. See
 `docs/status-2026-05-13.md` for the full inventory and results table.
 
 The **production pipeline** is `sim_ekf` + `sim_lbw`. Other sims are
