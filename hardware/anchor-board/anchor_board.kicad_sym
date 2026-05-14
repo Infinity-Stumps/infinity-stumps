@@ -119,7 +119,7 @@
 					)
 				)
 			)
-			(pin input line
+			(pin passive line
 				(at -17.78 11.43 0)
 				(length 5.08)
 				(name "SWDCLK"
@@ -155,7 +155,7 @@
 					)
 				)
 			)
-			(pin input line
+			(pin passive line
 				(at -17.78 6.35 0)
 				(length 5.08)
 				(name "UART_RX"
