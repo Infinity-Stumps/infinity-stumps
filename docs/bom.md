@@ -2,7 +2,7 @@
 
 > Living document. Update freely as components / suppliers / volumes change.
 
-**Last reviewed:** 2026-05-13
+**Last reviewed:** 2026-05-14
 **Volume assumption:** 100 pitches (prototype / low-volume pricing)
 **Currency:** GBP
 
@@ -49,9 +49,9 @@ is in `hardware/anchor-board/README.md`.
 | 16 MB SPI flash | Winbond W25Q128JVSIQ | 1.00 | Disconnect cache (not archive). See architecture.md §5.4. **Populated on every board** — used only by hub (A7) firmware, but fitting it everywhere makes any anchor hub-promotable and keeps a single assembly BOM. |
 | Flash power load switch | TI TPS22916C | 0.20 | Gates flash VCC in deep sleep. One GPIO controls it. Saves ~1 µA in deep-power-down mode. |
 | Tactile power button | Alps SKHHALA010 | 0.10 | Side-mounted, IP67-rated |
-| RGB status LED | Würth 150141RV73100 | 0.10 | 0805 SMD, common-anode |
-| SWD tag-connect footprint | Tag-Connect TC2030-NL | 0.10 | No connector on board, just pads |
-| Passives (~40 parts) | caps / resistors / 1 ferrite | 0.80 | Full itemised list in `hardware/anchor-board/README.md` §4 — module decoupling, charger network, protection, ESD, VBAT sense divider, LED limits, etc. |
+| RGB status LED | Würth 150141 series | 0.10 | PLCC-4 3.2×2.8 mm, common-anode. Confirm the exact orderable against the `LED_RGB_Wuerth-PLCC4…150141M173100` footprint. |
+| SWD tag-connect footprint | Tag-Connect TC2030-NL | 0.10 | No connector on board, just pads (J8). The dev-rail 2×5 SWD header is on the break-off rail — see note below. |
+| Passives (47 parts) | 19 caps / 26 resistors / 1 ferrite / 1 TVS | 0.80 | Full itemised list in `hardware/anchor-board/README.md` §4. Exact count from completed schematic capture: module decoupling, charger network (incl. ILIM/ITERM/TMR/ISET program R's), protection, USB-C ESD + VBUS TVS, VBAT sense divider, LED limit R's, button debounce, 3V0 bulk. |
 | PCB (4-layer, ~25×145 mm) | PCBWay / JLCPCB | 3.50 | Tall-and-thin to slide vertically inside the stump. At 100-piece volume. |
 | **Subtotal silicon + PCB** | | **31.20** | Excludes enclosure + assembly. DWM3001C integrating the accel + crystal drops ~£1.25 of discretes and ~£8 of module cost vs QPK3000. |
 
@@ -59,6 +59,15 @@ The **hub role (A7) is firmware-only** — no hardware delta. Every board
 is built identically with the flash + load switch populated, so any
 anchor can take the hub role (or be swapped in as a hub replacement) by
 reflashing. There is no separate hub SKU.
+
+**Break-off dev rail — not in the production cost.** The schematic also
+carries a V-scored dev rail (anchor-board README §7): J2 2×5 SWD header,
+J3 UART header, J4 GPIO breakout, J5 3V0 current-shunt jumper, J6
+LED-disable jumper, J7 reset/boot pads. These are populated only on dev
+boards and **snapped off for production** — the production board keeps
+just R26 (a 0 Ω in place of the J5 shunt, already counted in the 26
+resistors above) plus the on-board Tag-Connect pads. Dev-rail headers add
+~£1.50 in parts to a dev board but £0 to the production BOM.
 
 ---
 
@@ -187,6 +196,10 @@ The DWM3001C module is the dominant cost driver (~65%). At high volume, custom i
 
 | Date | Change | Rationale |
 |---|---|---|
+| 2026-05-14 | Passives line: "~40 parts" → exact "47 parts (19C/26R/1 ferrite/1 TVS)" | Schematic capture complete (anchor-board §4.1-4.9 + dev rail), ERC clean. Count is now exact, not estimated. Cost held at £0.80 — within prior estimate noise. |
+| 2026-05-14 | Added break-off dev-rail note (J2-J7 headers); confirmed £0 production cost | Dev-rail headers are on the V-scored break-off strip, snapped off for production. Only R26 (0 Ω shunt replacement) and the Tag-Connect pads remain. From schematic capture + footprint assignment. |
+| 2026-05-14 | RGB LED: "0805 SMD" → "PLCC-4 3.2×2.8 mm"; flagged orderable-code check | Footprint assigned is the Würth PLCC-4 150141M173100 land pattern; the BOM's "0805" descriptor was wrong. Exact Würth orderable to be confirmed against the footprint. |
+| 2026-05-14 | Footprints assigned to all parts; DWM3001C footprint from official Qorvo Altium library | Schematic now has valid footprints (stock KiCad libs + 3 project footprints); ERC 0/0. DWM3001C land pattern decoded from Qorvo's IntLib rather than hand-traced. TPD2E2U06 corrected to its real 6-pin SOT-563; TLV75530 confirmed as X2SON-4 (no thermal pad). |
 | 2026-05-14 | Merged dumb + hub anchor into one "Stump anchor" line; flash + load switch now populated on every board | Single assembly BOM, any anchor hub-promotable by reflashing. Hub is firmware-only. +£1.20/board on the 7 non-hub boards is noise. See `hardware/anchor-board/README.md`. |
 | 2026-05-14 | PCB 30×40 mm → ~25×145 mm, £2.00 → £3.50 | Tall-and-thin form factor to slide vertically inside the stump tube. From the anchor-board design. |
 | 2026-05-14 | "Bulk caps ×4" + "Misc passives" → single "Passives (~40 parts)" line, £0.70 → £0.80 | Expanded to the itemised schematic-level list (incl. VBAT sense divider, USB shield RC) in the anchor-board doc. |
