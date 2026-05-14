@@ -252,8 +252,8 @@ Phase 1+2 firmware bring-up (`docs/phase1-2-test-plan.md`) describes
 the validation sequence.
 
 If you're a **club / school / coach** wanting the finished product:
-this is being built. Watch for v1 launch (target: late 2026 after
-hardware validation). Contact the project for early-access waitlist.
+this is being built. Watch for the v1 launch once hardware validation
+is complete. Contact the project for early-access waitlist.
 
 If you're a **patent attorney** evaluating prior art on behalf of a
 competing entity: hello. Every meaningful technical claim in this
@@ -295,6 +295,6 @@ discuss. For routine fixes, just open a PR.
 - **Phase 3 (full-pitch outdoor validation):** ⬜ Pending hardware
 - **Phase 4a (3D-printed ball shell):** ⬜ Pending hardware
 - **iOS app:** ⬜ Architecture validated, no code yet
-- **v1 launch:** Target late 2026
+- **v1 launch:** ⬜ Pending hardware validation
 
 See `docs/status-2026-05-13.md` for the current state in detail.
