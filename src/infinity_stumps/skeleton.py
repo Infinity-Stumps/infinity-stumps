@@ -25,8 +25,10 @@ The skeleton's 14 cylinders are:
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Literal
+
 import numpy as np
 
 # Drillis-Contini anthropometric ratios (fraction of standing height)
@@ -34,7 +36,7 @@ FEMUR_RATIO = 0.245
 TIBIA_RATIO = 0.246
 HUMERUS_RATIO = 0.186
 FOREARM_RATIO = 0.146
-SPINE_RATIO = 0.288        # hip-midpoint to shoulder-midpoint
+SPINE_RATIO = 0.288  # hip-midpoint to shoulder-midpoint
 SHOULDER_BREADTH_RATIO = 0.259
 HIP_BREADTH_RATIO = 0.191
 HEAD_HEIGHT_RATIO = 0.130
@@ -46,16 +48,16 @@ FEMUR_RADIUS_RATIO = 0.038
 TIBIA_RADIUS_RATIO = 0.028
 TORSO_RADIUS_RATIO = 0.090
 HEAD_RADIUS_RATIO = 0.060
-PAD_RADIUS_RATIO = 0.055   # cricket pads over the shins
+PAD_RADIUS_RATIO = 0.055  # cricket pads over the shins
 BAT_RADIUS = 0.040
 
-CHORD_BLOCK_THRESHOLD_M = 0.01   # rays with any cylinder chord > 1 cm count as blocked
+CHORD_BLOCK_THRESHOLD_M = 0.01  # rays with any cylinder chord > 1 cm count as blocked
 
 
 @dataclass
 class Bone:
-    p0: np.ndarray   # (3,) start
-    p1: np.ndarray   # (3,) end
+    p0: np.ndarray  # (3,) start
+    p1: np.ndarray  # (3,) end
     radius: float
     label: str = ""
 
@@ -74,19 +76,20 @@ def _yaw_R(angle: float) -> np.ndarray:
     return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
 
 
-def sample_batter(rng: np.random.Generator,
-                   stance_x_centre: float = 10.0) -> BatterSkeleton:
+def sample_batter(
+    rng: np.random.Generator, stance_x_centre: float = 10.0
+) -> BatterSkeleton:
     """Sample a batter pose at the batter's-end crease.
 
     stance_x_centre: world X position of the batter's stance centre.
-    For cricket-uwb's coordinate system (origin at pitch centre, +X
+    For infinity-stumps's coordinate system (origin at pitch centre, +X
     toward batter end at +10.06 m), 10.0 m is typical (just inside
     the popping crease).
     """
     # Anthropometry
     height = float(np.clip(rng.normal(1.78, 0.07), 1.65, 1.95))
     build = float(np.clip(rng.normal(1.0, 0.10), 0.85, 1.20))
-    handedness = "right" if rng.uniform() < 0.5 else "left"
+    handedness: Literal["right", "left"] = "right" if rng.uniform() < 0.5 else "left"
 
     femur_len = FEMUR_RATIO * height
     tibia_len = TIBIA_RATIO * height
@@ -101,7 +104,7 @@ def sample_batter(rng: np.random.Generator,
     # Stance-pose params sampled per delivery
     cx = float(rng.uniform(stance_x_centre - 0.10, stance_x_centre + 0.10))
     cy = float(rng.uniform(-0.10, 0.10))
-    body_yaw = float(rng.uniform(-np.pi / 8, np.pi / 8))   # small side-on variation
+    body_yaw = float(rng.uniform(-np.pi / 8, np.pi / 8))  # small side-on variation
     foot_sep = float(rng.uniform(0.25, 0.40))
     knee_flex_l = float(rng.uniform(0.4, 0.8))
     knee_flex_r = float(rng.uniform(0.4, 0.8))
@@ -111,10 +114,10 @@ def sample_batter(rng: np.random.Generator,
     elbow_flex_r = float(rng.uniform(1.4, 2.1))
 
     sign = 1.0 if handedness == "right" else -1.0
-    # For cricket-uwb, +X is toward batter end, so the bowler is at -X
+    # For infinity-stumps, +X is toward batter end, so the bowler is at -X
     # relative to the batter. The batter faces toward -X (toward bowler).
     R_yaw = _yaw_R(body_yaw)
-    fwd = R_yaw @ np.array([-1.0, 0.0, 0.0])    # toward bowler (was +X in plumb)
+    fwd = R_yaw @ np.array([-1.0, 0.0, 0.0])  # toward bowler (was +X in plumb)
     side = R_yaw @ np.array([0.0, 1.0, 0.0])
 
     # Feet/ankles
@@ -147,11 +150,13 @@ def sample_batter(rng: np.random.Generator,
     r_hip = hip_mid + sign * (hip_breadth / 2) * side
 
     # Spine + shoulders
-    spine_dir = np.array([
-        np.sin(spine_lean) * fwd[0],
-        np.sin(spine_lean) * fwd[1],
-        np.cos(spine_lean),
-    ])
+    spine_dir = np.array(
+        [
+            np.sin(spine_lean) * fwd[0],
+            np.sin(spine_lean) * fwd[1],
+            np.cos(spine_lean),
+        ]
+    )
     shoulder_mid = hip_mid + spine_len * spine_dir
     R_sh = _yaw_R(sign * shoulder_rot)
     sh_axis = R_sh @ side
@@ -164,11 +169,13 @@ def sample_batter(rng: np.random.Generator,
         elbow_dir = elbow_dir / np.linalg.norm(elbow_dir)
         elbow = shoulder + humerus_len * elbow_dir
         bend = np.pi - elbow_flex
-        forearm_dir = np.array([
-            np.sin(bend) * fwd[0],
-            np.sin(bend) * fwd[1],
-            -np.cos(bend),
-        ])
+        forearm_dir = np.array(
+            [
+                np.sin(bend) * fwd[0],
+                np.sin(bend) * fwd[1],
+                -np.cos(bend),
+            ]
+        )
         forearm_dir = forearm_dir / np.linalg.norm(forearm_dir)
         wrist = elbow + forearm_len * forearm_dir
         return elbow, wrist
@@ -181,31 +188,30 @@ def sample_batter(rng: np.random.Generator,
 
     # Build the bone cylinders
     bones: list[Bone] = []
-    bones.append(Bone(l_shoulder, l_elbow,
-                       HUMERUS_RADIUS_RATIO * height * build, "humerus_L"))
-    bones.append(Bone(l_elbow, l_wrist,
-                       FOREARM_RADIUS_RATIO * height * build, "forearm_L"))
-    bones.append(Bone(r_shoulder, r_elbow,
-                       HUMERUS_RADIUS_RATIO * height * build, "humerus_R"))
-    bones.append(Bone(r_elbow, r_wrist,
-                       FOREARM_RADIUS_RATIO * height * build, "forearm_R"))
-    bones.append(Bone(l_hip, l_knee,
-                       FEMUR_RADIUS_RATIO * height * build, "femur_L"))
-    bones.append(Bone(l_knee, l_ankle,
-                       TIBIA_RADIUS_RATIO * height * build, "tibia_L"))
-    bones.append(Bone(r_hip, r_knee,
-                       FEMUR_RADIUS_RATIO * height * build, "femur_R"))
-    bones.append(Bone(r_knee, r_ankle,
-                       TIBIA_RADIUS_RATIO * height * build, "tibia_R"))
-    bones.append(Bone(hip_mid, shoulder_mid,
-                       TORSO_RADIUS_RATIO * height * build, "torso"))
+    bones.append(
+        Bone(l_shoulder, l_elbow, HUMERUS_RADIUS_RATIO * height * build, "humerus_L")
+    )
+    bones.append(
+        Bone(l_elbow, l_wrist, FOREARM_RADIUS_RATIO * height * build, "forearm_L")
+    )
+    bones.append(
+        Bone(r_shoulder, r_elbow, HUMERUS_RADIUS_RATIO * height * build, "humerus_R")
+    )
+    bones.append(
+        Bone(r_elbow, r_wrist, FOREARM_RADIUS_RATIO * height * build, "forearm_R")
+    )
+    bones.append(Bone(l_hip, l_knee, FEMUR_RADIUS_RATIO * height * build, "femur_L"))
+    bones.append(Bone(l_knee, l_ankle, TIBIA_RADIUS_RATIO * height * build, "tibia_L"))
+    bones.append(Bone(r_hip, r_knee, FEMUR_RADIUS_RATIO * height * build, "femur_R"))
+    bones.append(Bone(r_knee, r_ankle, TIBIA_RADIUS_RATIO * height * build, "tibia_R"))
+    bones.append(
+        Bone(hip_mid, shoulder_mid, TORSO_RADIUS_RATIO * height * build, "torso")
+    )
     head_bottom = head_centre - np.array([0.0, 0.0, head_height / 2])
     head_top = head_centre + np.array([0.0, 0.0, head_height / 2])
     bones.append(Bone(head_bottom, head_top, head_radius, "head"))
-    bones.append(Bone(l_ankle, l_knee,
-                       PAD_RADIUS_RATIO * height * build, "pad_L"))
-    bones.append(Bone(r_ankle, r_knee,
-                       PAD_RADIUS_RATIO * height * build, "pad_R"))
+    bones.append(Bone(l_ankle, l_knee, PAD_RADIUS_RATIO * height * build, "pad_L"))
+    bones.append(Bone(r_ankle, r_knee, PAD_RADIUS_RATIO * height * build, "pad_R"))
 
     # Bat — held forward from grip-centre, down toward pitch
     grip_centre = (l_wrist + r_wrist) / 2
@@ -215,17 +221,25 @@ def sample_batter(rng: np.random.Generator,
     bones.append(Bone(grip_centre, bat_tip, BAT_RADIUS, "bat"))
 
     metadata = {
-        "stance_xy": (cx, cy), "body_yaw": body_yaw,
+        "stance_xy": (cx, cy),
+        "body_yaw": body_yaw,
         "knee_flex": (knee_flex_l, knee_flex_r),
-        "spine_lean": spine_lean, "shoulder_rot": shoulder_rot,
+        "spine_lean": spine_lean,
+        "shoulder_rot": shoulder_rot,
         "elbow_flex": (elbow_flex_l, elbow_flex_r),
     }
-    return BatterSkeleton(bones=bones, height_m=height, build=build,
-                           handedness=handedness, metadata=metadata)
+    return BatterSkeleton(
+        bones=bones,
+        height_m=height,
+        build=build,
+        handedness=handedness,
+        metadata=metadata,
+    )
 
 
-def line_bone_chord_length(p_source: np.ndarray, p_mic: np.ndarray,
-                            bone: Bone) -> float:
+def line_bone_chord_length(
+    p_source: np.ndarray, p_mic: np.ndarray, bone: Bone
+) -> float:
     """Length of segment [p_source, p_mic] inside a finite oriented cylinder.
 
     Parameterise line over t in [0,1]. Decompose into the cylinder-axial
@@ -246,7 +260,7 @@ def line_bone_chord_length(p_source: np.ndarray, p_mic: np.ndarray,
     w_perp = w - w_par * a_unit
     A = float(d_perp @ d_perp)
     B = 2.0 * float(w_perp @ d_perp)
-    C = float(w_perp @ w_perp) - bone.radius ** 2
+    C = float(w_perp @ w_perp) - bone.radius**2
 
     if A < 1e-12:
         # Line parallel to cylinder axis
@@ -257,7 +271,8 @@ def line_bone_chord_length(p_source: np.ndarray, p_mic: np.ndarray,
         t_a = (0.0 - w_par) / d_par
         t_b = (np.sqrt(a_norm_sq) - w_par) / d_par
         t_lo, t_hi = sorted([t_a, t_b])
-        t_lo = max(0.0, t_lo); t_hi = min(1.0, t_hi)
+        t_lo = max(0.0, t_lo)
+        t_hi = min(1.0, t_hi)
         if t_hi <= t_lo:
             return 0.0
         return (t_hi - t_lo) * float(np.linalg.norm(d))
@@ -287,16 +302,19 @@ def line_bone_chord_length(p_source: np.ndarray, p_mic: np.ndarray,
     return (t_hi - t_lo) * float(np.linalg.norm(d))
 
 
-def total_body_chord_length(p_source: np.ndarray, p_target: np.ndarray,
-                              skeleton: BatterSkeleton) -> float:
+def total_body_chord_length(
+    p_source: np.ndarray, p_target: np.ndarray, skeleton: BatterSkeleton
+) -> float:
     """Sum chord lengths through all bones. Overlaps are summed."""
-    return sum(line_bone_chord_length(p_source, p_target, b)
-                for b in skeleton.bones)
+    return sum(line_bone_chord_length(p_source, p_target, b) for b in skeleton.bones)
 
 
-def is_blocked(p_source: np.ndarray, p_target: np.ndarray,
-                skeleton: BatterSkeleton,
-                threshold: float = CHORD_BLOCK_THRESHOLD_M) -> bool:
+def is_blocked(
+    p_source: np.ndarray,
+    p_target: np.ndarray,
+    skeleton: BatterSkeleton,
+    threshold: float = CHORD_BLOCK_THRESHOLD_M,
+) -> bool:
     """Binary block test: True if any bone gives a chord > threshold.
 
     UWB at 6.5 GHz attenuates ~30 dB/cm through tissue, so any chord

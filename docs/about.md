@@ -1,4 +1,4 @@
-# About Cricket UWB
+# About Infinity Stumps
 
 > **What this is, why we're building it, and why everything we make
 > is deliberately, publicly, dated prior art.**
@@ -7,7 +7,7 @@
 
 ## What this is
 
-Cricket UWB is a low-cost, open-source ball-tracking and LBW
+Infinity Stumps is a low-cost, open-source ball-tracking and LBW
 prediction system for cricket. It does what Hawk-Eye does — track
 the ball in 3D, predict trajectories, render DRS-style replays — but
 at roughly 1/30th the cost (~£1,500 vs £100K+), with a kit small
@@ -148,13 +148,13 @@ this repo's git history serves as defensive prior art:
    continuous Extended Kalman Filter over (position, velocity, spin)
    using a drag+Magnus+gravity ODE, with backward Rauch-Tung-Striebel
    smoothing applied for replay quality.
-   (`src/cricket_uwb/ekf.py`, May 2026)
+   (`src/infinity_stumps/ekf.py`, May 2026)
 3. **DRS-style verdict with uncertainty ellipse from EKF covariance
    propagation** — applying the EKF's smoothed covariance through a
    numerical Jacobian of the forward-extrapolation function to produce
    a 95% confidence ellipse at the stump line, classified against the
    stump rectangle for HIT / MISS / UMPIRE'S CALL verdict.
-   (`src/cricket_uwb/lbw.py`, May 2026)
+   (`src/infinity_stumps/lbw.py`, May 2026)
 4. **Phone-side disconnect-cache reconciliation protocol** — UWB
    anchor (hub) maintains a sequence-numbered append-only log; phone
    tracks `highest_seq_received` and requests gap-fill on reconnect.
@@ -167,7 +167,7 @@ this repo's git history serves as defensive prior art:
 6. **TWR-staggered EKF updates handling within-cycle motion** —
    propagating the EKF state by ~150 µs per anchor measurement
    within a single ranging cycle to account for ball motion across
-   the staggered TWR exchange. (`src/cricket_uwb/ekf.py`, May 2026)
+   the staggered TWR exchange. (`src/infinity_stumps/ekf.py`, May 2026)
 7. **iBall-borrow techniques applied to multi-anchor cricket UWB:**
    Bouncing constraint, AoA / PDoA fusion roadmap, DoP-weighted
    residuals, magnetometer cone-fitting for spin —
@@ -231,7 +231,7 @@ A few clarifications:
   project to provide warranty, certification, and support. This is
   desirable — open hardware needs commercial actors to scale.
 - **Open ≠ uncontrolled.** Trademark, branding, and certification
-  marks may be protected. The "Cricket UWB" name itself may become
+  marks may be protected. The "Infinity Stumps" name itself may become
   a registered trademark. Open architecture, controlled brand.
 - **Open ≠ infinite forks acceptable.** Forks that confuse users
   (look-alike products on Amazon, knock-off kits) are bad for the
@@ -259,7 +259,7 @@ If you're a **patent attorney** evaluating prior art on behalf of a
 competing entity: hello. Every meaningful technical claim in this
 document is dated, version-controlled, and timestamped via GitHub's
 infrastructure. The repository's full history is available at
-`https://github.com/[USERNAME]/cricket-uwb` (link to be published
+`https://github.com/[USERNAME]/infinity-stumps` (link to be published
 when the repo goes public).
 
 ---

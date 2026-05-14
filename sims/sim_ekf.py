@@ -12,14 +12,24 @@ RMS error per delivery).
 """
 
 from __future__ import annotations
-import numpy as np
-import matplotlib.pyplot as plt
 
-from cricket_uwb import (ANCHORS_8, BallParams, TrajectoryEKF, EKFConfig,
-                           integrate_trajectory)
-from cricket_uwb.physics import make_delivery
-from cricket_uwb.skeleton import (sample_batter, line_bone_chord_length,
-                                    CHORD_BLOCK_THRESHOLD_M, Bone)
+import matplotlib.pyplot as plt
+import numpy as np
+
+from infinity_stumps import (
+    ANCHORS_8,
+    BallParams,
+    EKFConfig,
+    TrajectoryEKF,
+    integrate_trajectory,
+)
+from infinity_stumps.physics import make_delivery
+from infinity_stumps.skeleton import (
+    CHORD_BLOCK_THRESHOLD_M,
+    Bone,
+    line_bone_chord_length,
+    sample_batter,
+)
 
 P_DETECT = 0.85
 P_FP = 0.02
@@ -28,20 +38,25 @@ NLOS_BIAS = (0.05, 0.20)
 DROP_PROB = 0.5
 RANGE_SIGMA = 0.030
 UWB_RATE_HZ = 100.0
-ANCHOR_STAGGER = 1.5e-3 / 8     # 150 µs per anchor within one cycle
+ANCHOR_STAGGER = 1.5e-3 / 8  # 150 µs per anchor within one cycle
 N_MC = 30
 
 
 def static_bones(rng):
     return [
-        Bone(np.array([-10.5, -0.40, 0.0]),
-             np.array([-10.5, -0.40, 1.85]), 0.20, "umpire"),
-        Bone(np.array([+11.0, 0.0, 0.0]),
-             np.array([+11.0, 0.0, 1.10]), 0.25, "keeper"),
-        Bone(np.array([+11.2, -1.20, 0.0]),
-             np.array([+11.2, -1.20, 1.10]), 0.22, "slip1"),
-        Bone(np.array([+11.5, -1.80, 0.0]),
-             np.array([+11.5, -1.80, 1.10]), 0.22, "slip2"),
+        Bone(
+            np.array([-10.5, -0.40, 0.0]),
+            np.array([-10.5, -0.40, 1.85]),
+            0.20,
+            "umpire",
+        ),
+        Bone(np.array([+11.0, 0.0, 0.0]), np.array([+11.0, 0.0, 1.10]), 0.25, "keeper"),
+        Bone(
+            np.array([+11.2, -1.20, 0.0]), np.array([+11.2, -1.20, 1.10]), 0.22, "slip1"
+        ),
+        Bone(
+            np.array([+11.5, -1.80, 0.0]), np.array([+11.5, -1.80, 1.10]), 0.22, "slip2"
+        ),
     ] + sample_batter(rng, stance_x_centre=10.0).bones
 
 
@@ -52,11 +67,11 @@ def bowler_bones(t):
         y = 0.20 + (1.50 - 0.20) * s
     else:
         x, y = -5.0, 1.50
-    out = [Bone(np.array([x, y, 0.0]),
-                np.array([x, y, 1.85]), 0.20, "bowler_torso")]
+    out = [Bone(np.array([x, y, 0.0]), np.array([x, y, 1.85]), 0.20, "bowler_torso")]
     if t <= 0.15:
-        out.append(Bone(np.array([x, y, 1.85]),
-                        np.array([x, y, 2.50]), 0.05, "bowler_arm"))
+        out.append(
+            Bone(np.array([x, y, 1.85]), np.array([x, y, 2.50]), 0.05, "bowler_arm")
+        )
     return out
 
 
@@ -79,8 +94,7 @@ def measure_one_range(true_pos, anchor, bones, rng):
         return np.nan
     if rng.random() < P_DETECT:
         return np.nan
-    return (true_d + rng.uniform(*NLOS_BIAS)
-            + rng.normal(0.0, SIGMA_NLOS))
+    return true_d + rng.uniform(*NLOS_BIAS) + rng.normal(0.0, SIGMA_NLOS)
 
 
 def run_one(seed: int) -> dict:
@@ -94,11 +108,13 @@ def run_one(seed: int) -> dict:
     statics = static_bones(rng)
 
     ekf = TrajectoryEKF(BallParams(), EKFConfig())
-    x0_state = np.concatenate([
-        rp + rng.normal(0, 0.2, 3),
-        v0 + rng.normal(0, 2.0, 3),
-        spin + rng.normal(0, 20, 3),
-    ])
+    x0_state = np.concatenate(
+        [
+            rp + rng.normal(0, 0.2, 3),
+            v0 + rng.normal(0, 2.0, 3),
+            spin + rng.normal(0, 20, 3),
+        ]
+    )
     ekf.initialise(t=0.0, x0=x0_state)
 
     # Record truth-at-cycle for comparison; also remember the cycle-end
@@ -127,7 +143,7 @@ def run_one(seed: int) -> dict:
 
     def stats(est_arr):
         err = est_arr - truth_arr
-        rms_3d = float(np.sqrt((err ** 2).sum(axis=1)).mean() * 1000)
+        rms_3d = float(np.sqrt((err**2).sum(axis=1)).mean() * 1000)
         med_3d = float(np.median(np.linalg.norm(err, axis=1)) * 1000)
         per_axis = np.abs(err)
         return {
@@ -137,6 +153,7 @@ def run_one(seed: int) -> dict:
             "mean_y_mm": float(per_axis[:, 1].mean() * 1000),
             "mean_z_mm": float(per_axis[:, 2].mean() * 1000),
         }
+
     return {"forward": stats(fwd_arr), "smoothed": stats(smo_arr)}
 
 
@@ -147,10 +164,14 @@ def main():
     for i, s in enumerate(range(1500, 1500 + N_MC)):
         r = run_one(s)
         rows.append(r)
-        fwd = r["forward"]; smo = r["smoothed"]
-        print(f"  [{i+1:2d}/{N_MC}]  fwd RMS={fwd['rms_3d_mm']:6.1f}  "
-              f"smoothed RMS={smo['rms_3d_mm']:6.1f}  "
-              f"Δ={fwd['rms_3d_mm']-smo['rms_3d_mm']:+5.1f} mm", flush=True)
+        fwd = r["forward"]
+        smo = r["smoothed"]
+        print(
+            f"  [{i + 1:2d}/{N_MC}]  fwd RMS={fwd['rms_3d_mm']:6.1f}  "
+            f"smoothed RMS={smo['rms_3d_mm']:6.1f}  "
+            f"Δ={fwd['rms_3d_mm'] - smo['rms_3d_mm']:+5.1f} mm",
+            flush=True,
+        )
 
     fwd_rms = np.array([r["forward"]["rms_3d_mm"] for r in rows])
     smo_rms = np.array([r["smoothed"]["rms_3d_mm"] for r in rows])
@@ -162,20 +183,33 @@ def main():
     smo_z = np.array([r["smoothed"]["mean_z_mm"] for r in rows])
 
     print("\nPer-delivery RMS 3D (mm):")
-    print(f"  forward  : mean={fwd_rms.mean():5.1f}  med={np.median(fwd_rms):5.1f}  p95={np.percentile(fwd_rms,95):5.1f}")
-    print(f"  smoothed : mean={smo_rms.mean():5.1f}  med={np.median(smo_rms):5.1f}  p95={np.percentile(smo_rms,95):5.1f}")
-    print(f"  batch fit (reference): mean=41.0  med=35.0  p95=78.0")
+    print(
+        f"  forward  : mean={fwd_rms.mean():5.1f}  med={np.median(fwd_rms):5.1f}  p95={np.percentile(fwd_rms, 95):5.1f}"
+    )
+    print(
+        f"  smoothed : mean={smo_rms.mean():5.1f}  med={np.median(smo_rms):5.1f}  p95={np.percentile(smo_rms, 95):5.1f}"
+    )
+    print("  batch fit (reference): mean=41.0  med=35.0  p95=78.0")
     print("\nPer-axis |err| (mm):")
-    print(f"  forward  : x={fwd_x.mean():5.1f}  y={fwd_y.mean():5.1f}  z={fwd_z.mean():5.1f}")
-    print(f"  smoothed : x={smo_x.mean():5.1f}  y={smo_y.mean():5.1f}  z={smo_z.mean():5.1f}")
+    print(
+        f"  forward  : x={fwd_x.mean():5.1f}  y={fwd_y.mean():5.1f}  z={fwd_z.mean():5.1f}"
+    )
+    print(
+        f"  smoothed : x={smo_x.mean():5.1f}  y={smo_y.mean():5.1f}  z={smo_z.mean():5.1f}"
+    )
 
     fig, ax = plt.subplots(figsize=(9, 5))
-    ax.boxplot([fwd_rms, smo_rms], widths=0.6, patch_artist=True,
-                tick_labels=["EKF forward", "EKF + RTS smoother"])
+    ax.boxplot(
+        [fwd_rms, smo_rms],
+        widths=0.6,
+        patch_artist=True,
+        tick_labels=["EKF forward", "EKF + RTS smoother"],
+    )
     ax.axhline(41, color="purple", ls="--", label="batch fit baseline (~41 mm)")
     ax.set_ylabel("Per-delivery RMS 3D (mm)")
     ax.set_title("Sim EKF — forward vs RTS-smoothed, realistic occlusion @ 100 Hz")
-    ax.grid(alpha=0.3, axis="y"); ax.legend()
+    ax.grid(alpha=0.3, axis="y")
+    ax.legend()
     plt.tight_layout()
     out = "outputs/sim_ekf.png"
     plt.savefig(out, dpi=130, bbox_inches="tight")

@@ -1,16 +1,19 @@
 """Position solvers — multilateration and physics-fit."""
 
 from __future__ import annotations
+
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import least_squares
-from .physics import integrate_trajectory, BallParams
+
+from .physics import BallParams, integrate_trajectory
 
 
-def solve_position(measured_ranges: NDArray[np.float64],
-                   anchors: NDArray[np.float64],
-                   x0: NDArray[np.float64] | None = None
-                   ) -> NDArray[np.float64]:
+def solve_position(
+    measured_ranges: NDArray[np.float64],
+    anchors: NDArray[np.float64],
+    x0: NDArray[np.float64] | None = None,
+) -> NDArray[np.float64]:
     """LM multilateration. Handles NaN ranges as dropped anchors."""
     valid = ~np.isnan(measured_ranges)
     if valid.sum() < 4:
@@ -27,11 +30,12 @@ def solve_position(measured_ranges: NDArray[np.float64],
     return least_squares(residuals, x0, method="lm").x
 
 
-def solve_position_at_ground(measured_ranges: NDArray[np.float64],
-                              anchors: NDArray[np.float64],
-                              x0_xy: NDArray[np.float64] | None = None,
-                              z_fixed: float = 0.0,
-                              ) -> NDArray[np.float64]:
+def solve_position_at_ground(
+    measured_ranges: NDArray[np.float64],
+    anchors: NDArray[np.float64],
+    x0_xy: NDArray[np.float64] | None = None,
+    z_fixed: float = 0.0,
+) -> NDArray[np.float64]:
     """2D multilateration with z fixed. Returns 3-vector [x, y, z_fixed].
 
     At the bounce moment we know z = 0 exactly. Solving 8 ranges for
@@ -59,21 +63,22 @@ def solve_position_at_ground(measured_ranges: NDArray[np.float64],
     return np.array([xy[0], xy[1], z_fixed])
 
 
-def fit_trajectory(times_obs: NDArray[np.float64],
-                   pos_obs: NDArray[np.float64],
-                   sigma_pos: float = 0.05,
-                   params: BallParams | None = None,
-                   x0: NDArray[np.float64] | None = None,
-                   max_nfev: int = 200,
-                   loss: str = "linear",
-                   f_scale: float = 1.0,
-                   bounce_time: float | None = None,
-                   bounce_sigma_z: float = 0.020,
-                   bounce_vz_obs: float | None = None,
-                   bounce_vz_sigma: float = 1.0,
-                   bounce_xy_obs: NDArray[np.float64] | None = None,
-                   bounce_xy_sigma: float | NDArray[np.float64] = 0.020,
-                   ) -> tuple[NDArray, NDArray]:
+def fit_trajectory(
+    times_obs: NDArray[np.float64],
+    pos_obs: NDArray[np.float64],
+    sigma_pos: float = 0.05,
+    params: BallParams | None = None,
+    x0: NDArray[np.float64] | None = None,
+    max_nfev: int = 200,
+    loss: str = "linear",
+    f_scale: float = 1.0,
+    bounce_time: float | None = None,
+    bounce_sigma_z: float = 0.020,
+    bounce_vz_obs: float | None = None,
+    bounce_vz_sigma: float = 1.0,
+    bounce_xy_obs: NDArray[np.float64] | None = None,
+    bounce_xy_sigma: float | NDArray[np.float64] = 0.020,
+) -> tuple[NDArray, NDArray]:
     """Physics-constrained trajectory fit.
 
     Fits [release_pos(3), v0(3), spin(3)] to observed positions by
@@ -108,23 +113,27 @@ def fit_trajectory(times_obs: NDArray[np.float64],
     if x0 is None:
         n_init = min(20, len(times_obs))
         p0_pos = pos_obs[0]
-        dt_init = max(times_obs[n_init-1] - times_obs[0], 1e-3)
-        p0_vel = (pos_obs[n_init-1] - pos_obs[0]) / dt_init
+        dt_init = max(times_obs[n_init - 1] - times_obs[0], 1e-3)
+        p0_vel = (pos_obs[n_init - 1] - pos_obs[0]) / dt_init
         p0_spin = np.array([0.0, 50.0, 0.0])
         x0 = np.concatenate([p0_pos, p0_vel, p0_spin])
     # Need to integrate past both observations and the bounce constraint
-    t_max = max(times_obs[-1],
-                bounce_time if bounce_time is not None else times_obs[-1]) + 1e-3
+    t_max = (
+        max(times_obs[-1], bounce_time if bounce_time is not None else times_obs[-1])
+        + 1e-3
+    )
 
     def residuals(pv):
-        ts, states = integrate_trajectory(pv[:3], pv[3:6], pv[6:9],
-                                          t_max=t_max, params=params)
+        ts, states = integrate_trajectory(
+            pv[:3], pv[3:6], pv[6:9], t_max=t_max, params=params
+        )
         # Linear interpolation onto observation times — avoids the
         # ~9.5 mm/axis bias that arises from picking nearest-after
         # samples when fitting against real (irregularly-timed)
         # measurements.
-        interp_pos = np.column_stack([np.interp(times_obs, ts, states[:, d])
-                                       for d in range(3)])
+        interp_pos = np.column_stack(
+            [np.interp(times_obs, ts, states[:, d]) for d in range(3)]
+        )
         obs_residuals = (interp_pos - pos_obs).flatten() / sigma_pos
         if bounce_time is None:
             return obs_residuals
@@ -164,11 +173,14 @@ def fit_trajectory(times_obs: NDArray[np.float64],
     if loss == "linear":
         result = least_squares(residuals, x0, method="lm", max_nfev=max_nfev)
     else:
-        result = least_squares(residuals, x0, method="trf", loss=loss,
-                                f_scale=f_scale, max_nfev=max_nfev)
+        result = least_squares(
+            residuals, x0, method="trf", loss=loss, f_scale=f_scale, max_nfev=max_nfev
+        )
     fp = result.x
-    ts_fit, st_fit = integrate_trajectory(fp[:3], fp[3:6], fp[6:9],
-                                          t_max=t_max, params=params)
-    interp_fit = np.column_stack([np.interp(times_obs, ts_fit, st_fit[:, d])
-                                   for d in range(3)])
+    ts_fit, st_fit = integrate_trajectory(
+        fp[:3], fp[3:6], fp[6:9], t_max=t_max, params=params
+    )
+    interp_fit = np.column_stack(
+        [np.interp(times_obs, ts_fit, st_fit[:, d]) for d in range(3)]
+    )
     return interp_fit, fp

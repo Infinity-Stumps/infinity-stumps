@@ -72,7 +72,7 @@ of what they prototyped.
 
 ## What we do differently
 
-| Dimension | iBall 2017 | Cricket-UWB 2026 | Reason |
+| Dimension | iBall 2017 | Infinity Stumps 2026 | Reason |
 |---|---|---|---|
 | Anchors | 2 | **8** | DoP collapse with 2 anchors; sim 02 says 8 is the sweet spot |
 | UWB silicon | Decawave gen-1 | Qorvo DW3110 (DWM3001C module) | ~5× better raw ranging σ (30 mm vs 150 mm), FiRa / 802.15.4z, CIR access for NLOS detection |
@@ -103,7 +103,7 @@ because of this.
 - Detect bounce from ADXL372 impact spike (we already log this)
 - Add a soft constraint to `fit_trajectory`: residual `(z(t_bounce) - 0)² / σ_z²`
 - Should improve Z-axis error specifically and tighten LBW predictions
-- Effort: ~1 day in `src/cricket_uwb/solver.py`
+- Effort: ~1 day in `src/infinity_stumps/solver.py`
 
 ### 2. AoA / PDoA fusion (HIGH priority)
 

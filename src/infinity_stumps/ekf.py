@@ -21,43 +21,45 @@ the physics ODE between measurements.
 """
 
 from __future__ import annotations
-from dataclasses import dataclass, field
+
+from dataclasses import dataclass
+
 import numpy as np
 from numpy.typing import NDArray
 from scipy.integrate import odeint
 
 from .physics import BallParams, ball_dynamics
 
-
 # Index helpers
-P_X, P_Y, P_Z = 0, 1, 2          # position
-V_X, V_Y, V_Z = 3, 4, 5          # velocity
-S_X, S_Y, S_Z = 6, 7, 8          # spin (rad/s)
+P_X, P_Y, P_Z = 0, 1, 2  # position
+V_X, V_Y, V_Z = 3, 4, 5  # velocity
+S_X, S_Y, S_Z = 6, 7, 8  # spin (rad/s)
 STATE_DIM = 9
 
 
 @dataclass
 class EKFConfig:
     """Hyperparameters for the trajectory EKF."""
+
     # Initial covariance (uncertainty on initial state guess)
-    sigma0_pos: float = 0.30         # m
-    sigma0_vel: float = 5.0          # m/s
-    sigma0_spin: float = 50.0        # rad/s — broad, we know little a priori
+    sigma0_pos: float = 0.30  # m
+    sigma0_vel: float = 5.0  # m/s
+    sigma0_spin: float = 50.0  # rad/s — broad, we know little a priori
 
     # Process noise per second (continuous-time)
-    q_pos: float = 0.001             # m/√s   — physics is nearly exact
-    q_vel: float = 0.05              # m/s/√s — drag/Magnus model errors
-    q_spin: float = 0.5              # rad/s/√s — slow spin axis variation
+    q_pos: float = 0.001  # m/√s   — physics is nearly exact
+    q_vel: float = 0.05  # m/s/√s — drag/Magnus model errors
+    q_spin: float = 0.5  # rad/s/√s — slow spin axis variation
 
     # Measurement noise (range)
-    sigma_range: float = 0.030       # m (matches DW3110 datasheet)
+    sigma_range: float = 0.030  # m (matches DW3110 datasheet)
 
     # Bounce constraint (when triggered by impact sensor)
-    sigma_bounce_z: float = 0.020    # m — softly pin z=0 at bounce instant
+    sigma_bounce_z: float = 0.020  # m — softly pin z=0 at bounce instant
 
     # Numerical
-    ode_dt: float = 0.001            # s — internal integration step
-    jacobian_eps: float = 1e-4       # m or m/s for numerical Jacobian
+    ode_dt: float = 0.001  # s — internal integration step
+    jacobian_eps: float = 1e-4  # m or m/s for numerical Jacobian
 
 
 class TrajectoryEKF:
@@ -75,8 +77,7 @@ class TrajectoryEKF:
         cov = ekf.P
     """
 
-    def __init__(self, params: BallParams | None = None,
-                 cfg: EKFConfig | None = None):
+    def __init__(self, params: BallParams | None = None, cfg: EKFConfig | None = None):
         self.params = params or BallParams()
         self.cfg = cfg or EKFConfig()
         self.state: NDArray[np.float64] = np.zeros(STATE_DIM)
@@ -91,28 +92,34 @@ class TrajectoryEKF:
         # (F, Q, x_predicted_before_update, P_predicted_before_update)
         # so the backward pass can compute G[k] and propagate smoothed
         # estimates.
-        self._F_to_next: list[NDArray] = []          # F used to reach this snapshot
-        self._x_pred_at: list[NDArray] = []          # predicted state at snapshot time
-        self._P_pred_at: list[NDArray] = []          # predicted cov at snapshot time
+        self._F_to_next: list[NDArray] = []  # F used to reach this snapshot
+        self._x_pred_at: list[NDArray] = []  # predicted state at snapshot time
+        self._P_pred_at: list[NDArray] = []  # predicted cov at snapshot time
         # Smoothed history (populated by smooth_backward)
         self.smoothed_state: list[NDArray] = []
         self.smoothed_P: list[NDArray] = []
 
     # ---------- initialisation ----------
 
-    def initialise(self, t: float, x0: NDArray[np.float64],
-                    P0: NDArray[np.float64] | None = None) -> None:
+    def initialise(
+        self, t: float, x0: NDArray[np.float64], P0: NDArray[np.float64] | None = None
+    ) -> None:
         self.t = float(t)
         self.state = np.asarray(x0, dtype=np.float64).copy()
         if P0 is None:
-            diag = np.array([
-                self.cfg.sigma0_pos**2, self.cfg.sigma0_pos**2,
-                self.cfg.sigma0_pos**2,
-                self.cfg.sigma0_vel**2, self.cfg.sigma0_vel**2,
-                self.cfg.sigma0_vel**2,
-                self.cfg.sigma0_spin**2, self.cfg.sigma0_spin**2,
-                self.cfg.sigma0_spin**2,
-            ])
+            diag = np.array(
+                [
+                    self.cfg.sigma0_pos**2,
+                    self.cfg.sigma0_pos**2,
+                    self.cfg.sigma0_pos**2,
+                    self.cfg.sigma0_vel**2,
+                    self.cfg.sigma0_vel**2,
+                    self.cfg.sigma0_vel**2,
+                    self.cfg.sigma0_spin**2,
+                    self.cfg.sigma0_spin**2,
+                    self.cfg.sigma0_spin**2,
+                ]
+            )
             self.P = np.diag(diag)
         else:
             self.P = np.asarray(P0, dtype=np.float64).copy()
@@ -151,11 +158,22 @@ class TrajectoryEKF:
         x_before = self.state.copy()
         self.state = self._propagate_state(x_before, dt)
         F = self._numerical_jacobian(x_before, dt)
-        q_diag = np.array([
-            self.cfg.q_pos**2, self.cfg.q_pos**2, self.cfg.q_pos**2,
-            self.cfg.q_vel**2, self.cfg.q_vel**2, self.cfg.q_vel**2,
-            self.cfg.q_spin**2, self.cfg.q_spin**2, self.cfg.q_spin**2,
-        ]) * dt
+        q_diag = (
+            np.array(
+                [
+                    self.cfg.q_pos**2,
+                    self.cfg.q_pos**2,
+                    self.cfg.q_pos**2,
+                    self.cfg.q_vel**2,
+                    self.cfg.q_vel**2,
+                    self.cfg.q_vel**2,
+                    self.cfg.q_spin**2,
+                    self.cfg.q_spin**2,
+                    self.cfg.q_spin**2,
+                ]
+            )
+            * dt
+        )
         self.P = F @ self.P @ F.T + np.diag(q_diag)
         self.P = 0.5 * (self.P + self.P.T)
         self.t = float(t_to)
@@ -163,14 +181,17 @@ class TrajectoryEKF:
         # If an update arrives next, _commit_filtered() overwrites the
         # filtered state/cov at this index (predicted stays for RTS).
         self.history_t.append(self.t)
-        self.history_state.append(self.state.copy())   # filtered (no update yet → = pred)
+        self.history_state.append(
+            self.state.copy()
+        )  # filtered (no update yet → = pred)
         self.history_P.append(self.P.copy())
         self._F_to_next.append(F)
         self._x_pred_at.append(self.state.copy())
         self._P_pred_at.append(self.P.copy())
 
-    def _propagate_state(self, x: NDArray[np.float64],
-                          dt: float) -> NDArray[np.float64]:
+    def _propagate_state(
+        self, x: NDArray[np.float64], dt: float
+    ) -> NDArray[np.float64]:
         """One-shot ODE integration with bounce handling."""
         if dt <= 0:
             return x.copy()
@@ -179,8 +200,14 @@ class TrajectoryEKF:
         spin = x[6:9].copy()
         n_steps = max(1, int(np.ceil(dt / self.cfg.ode_dt)))
         ts_local = np.linspace(0.0, dt, n_steps + 1)
-        sol = odeint(ball_dynamics, ode_state, ts_local,
-                      args=(spin, self.params), rtol=1e-7, atol=1e-9)
+        sol = odeint(
+            ball_dynamics,
+            ode_state,
+            ts_local,
+            args=(spin, self.params),
+            rtol=1e-7,
+            atol=1e-9,
+        )
         new_state6 = sol[-1].copy()
         # Bounce: if z <= 0 and falling, apply CoR (one-shot per call)
         if new_state6[2] <= 0.0 and new_state6[5] < 0:
@@ -191,14 +218,17 @@ class TrajectoryEKF:
             self._has_bounced = True
         return np.concatenate([new_state6, spin])
 
-    def _numerical_jacobian(self, x: NDArray[np.float64],
-                              dt: float) -> NDArray[np.float64]:
+    def _numerical_jacobian(
+        self, x: NDArray[np.float64], dt: float
+    ) -> NDArray[np.float64]:
         """∂(propagate(x, dt))/∂x via central differences."""
         eps = self.cfg.jacobian_eps
         F = np.zeros((STATE_DIM, STATE_DIM))
         for i in range(STATE_DIM):
-            xp = x.copy(); xp[i] += eps
-            xm = x.copy(); xm[i] -= eps
+            xp = x.copy()
+            xp[i] += eps
+            xm = x.copy()
+            xm[i] -= eps
             yp = self._propagate_state(xp, dt)
             ym = self._propagate_state(xm, dt)
             F[:, i] = (yp - ym) / (2.0 * eps)
@@ -206,8 +236,7 @@ class TrajectoryEKF:
 
     # ---------- measurement updates ----------
 
-    def update_range(self, anchor_pos: NDArray[np.float64],
-                      range_obs: float) -> None:
+    def update_range(self, anchor_pos: NDArray[np.float64], range_obs: float) -> None:
         """Standard range-measurement EKF update.
 
         Range residual: r_obs - || pos_estimate - anchor ||
@@ -224,13 +253,13 @@ class TrajectoryEKF:
         H[0, P_X] = diff[0] / d
         H[0, P_Y] = diff[1] / d
         H[0, P_Z] = diff[2] / d
-        R = np.array([[self.cfg.sigma_range ** 2]])
+        R = np.array([[self.cfg.sigma_range**2]])
         innovation = np.array([range_obs - d])
         S = H @ self.P @ H.T + R
         K = self.P @ H.T @ np.linalg.inv(S)
         self.state = self.state + (K @ innovation).flatten()
-        I = np.eye(STATE_DIM)
-        self.P = (I - K @ H) @ self.P @ (I - K @ H).T + K @ R @ K.T
+        eye = np.eye(STATE_DIM)
+        self.P = (eye - K @ H) @ self.P @ (eye - K @ H).T + K @ R @ K.T
         self.P = 0.5 * (self.P + self.P.T)
         # Overwrite the filtered slot at the most recent snapshot
         if self.history_state:
@@ -240,14 +269,15 @@ class TrajectoryEKF:
     def update_bounce_z(self, bounce_time: float) -> None:
         """Apply the z=0 bounce constraint as a soft measurement update."""
         self.predict(bounce_time)
-        H = np.zeros((1, STATE_DIM)); H[0, P_Z] = 1.0
-        R = np.array([[self.cfg.sigma_bounce_z ** 2]])
+        H = np.zeros((1, STATE_DIM))
+        H[0, P_Z] = 1.0
+        R = np.array([[self.cfg.sigma_bounce_z**2]])
         innovation = np.array([0.0 - self.state[P_Z]])
         S = H @ self.P @ H.T + R
         K = self.P @ H.T @ np.linalg.inv(S)
         self.state = self.state + (K @ innovation).flatten()
-        I = np.eye(STATE_DIM)
-        self.P = (I - K @ H) @ self.P @ (I - K @ H).T + K @ R @ K.T
+        eye = np.eye(STATE_DIM)
+        self.P = (eye - K @ H) @ self.P @ (eye - K @ H).T + K @ R @ K.T
         self.P = 0.5 * (self.P + self.P.T)
         if self.history_state:
             self.history_state[-1] = self.state.copy()
@@ -272,8 +302,8 @@ class TrajectoryEKF:
             self.smoothed_state = [s.copy() for s in self.history_state]
             self.smoothed_P = [P.copy() for P in self.history_P]
             return
-        xs = [None] * N
-        Ps = [None] * N
+        xs: list[NDArray] = [np.empty(STATE_DIM)] * N
+        Ps: list[NDArray] = [np.empty((STATE_DIM, STATE_DIM))] * N
         xs[-1] = self.history_state[-1].copy()
         Ps[-1] = self.history_P[-1].copy()
         for k in range(N - 2, -1, -1):
@@ -309,5 +339,4 @@ class TrajectoryEKF:
 
     def trajectory_array(self) -> tuple[NDArray, NDArray]:
         """Return (times, states[N, 9]) from the history buffer."""
-        return (np.asarray(self.history_t),
-                np.asarray(self.history_state))
+        return (np.asarray(self.history_t), np.asarray(self.history_state))

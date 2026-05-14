@@ -82,7 +82,7 @@ else is engineering around it.
    UWB with no dropouts). v2 could revisit with tightly-coupled
    fusion (sim 06b — not built).
 6. Analytics: **physics-EKF with RTS smoother**. The state-space
-   estimator (`src/cricket_uwb/ekf.py`) runs a continuous EKF over
+   estimator (`src/infinity_stumps/ekf.py`) runs a continuous EKF over
    (position, velocity, spin) using the drag+Magnus+gravity ODE for
    prediction and per-anchor TWR range measurements for updates. A
    Rauch-Tung-Striebel backward pass refines past estimates using
@@ -130,7 +130,7 @@ else is engineering around it.
 
 ## What to focus on
 
-1. **LBW prediction module** (`sims/sim_lbw.py`, `src/cricket_uwb/lbw.py`):
+1. **LBW prediction module** (`sims/sim_lbw.py`, `src/infinity_stumps/lbw.py`):
    forward extrapolation + uncertainty ellipse at stump line + HIT/MISS/
    UMPIRE'S CALL verdict. Target: beat iBall's 22 cm 3D / 9.9 cm X-axis.
 2. **iBall borrowables** (see `docs/prior-art.md`):

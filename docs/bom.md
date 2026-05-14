@@ -1,4 +1,4 @@
-# Cricket UWB — Bill of Materials (active)
+# Infinity Stumps — Bill of Materials (active)
 
 > Living document. Update freely as components / suppliers / volumes change.
 

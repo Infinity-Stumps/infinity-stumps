@@ -3,10 +3,23 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cricket-uwb"
+name = "infinity-stumps"
 version = "0.2.0"
-description = "Cricket ball UWB tracking — Phase 0 simulation"
+description = "Low-cost UWB ball-tracking and LBW prediction for cricket — DRS for the rest of us"
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Matthew Hardern", email = "matthewhardern@googlemail.com" }]
+keywords = ["cricket", "uwb", "tracking", "kalman-filter", "lbw", "sports-analytics"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.10",
@@ -14,7 +27,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+dev = [
+    "pytest>=7",
+    "pytest-cov>=4",
+    "ruff>=0.6",
+    "mypy>=1.8",
+    "pre-commit>=3.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/Infinity-Stumps/infinity-stumps"
+Repository = "https://github.com/Infinity-Stumps/infinity-stumps"
+Issues = "https://github.com/Infinity-Stumps/infinity-stumps/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -23,3 +47,31 @@ where = ["src"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 python_files = ["test_*.py"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+src = ["src", "sims", "tests"]
+
+[tool.ruff.lint]
+# Lenient starting set — correctness, imports, modern syntax, common bugs.
+# Tighten over time (add SIM, NPY, RUF, ...) once the codebase is clean.
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+    "E501",  # line length — let the formatter handle wrapping, don't block on comments
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Sims are exploratory scripts — allow unused imports / vars, loose zip(),
+# and single-letter loop names while iterating.
+"sims/*" = ["F401", "F841", "B905", "E741"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+# Non-strict to start: no disallow-untyped-defs, no strict-optional churn.
+# Tighten incrementally as modules get full annotations.

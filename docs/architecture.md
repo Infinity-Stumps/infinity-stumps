@@ -1,6 +1,6 @@
-# Cricket UWB — Technical Architecture
+# Infinity Stumps — Technical Architecture
 
-> System architecture for the Cricket UWB ball tracking + LBW prediction
+> System architecture for the Infinity Stumps ball tracking + LBW prediction
 > system. Reference document for v1.
 
 **Version:** v1 (May 2026)
@@ -54,7 +54,7 @@ network at the pitch.
 |---|---|---|---|---|
 | Hawk-Eye | ~30 mm (field) | £100K–£250K + £20-50K/yr | Trucks, masts, multiple HD cameras | International cricket |
 | iBall (NSDI '17) | 80 mm median (indoor) | research prototype, never productised | 2 anchors + ball-embedded UWB | Research |
-| **Cricket-UWB v1** | **47 mm mean** | **~£1,500** | **8 small anchors + ball + phone** | **Clubs, schools, coaches** |
+| **Infinity Stumps v1** | **47 mm mean** | **~£1,500** | **8 small anchors + ball + phone** | **Clubs, schools, coaches** |
 
 ---
 
@@ -152,7 +152,7 @@ the off-season. ~10-year service life with annual deep cycles.
 | **A7** | **Batter off stump** | **680** | **Top of stump** | **Hub stump** |
 | A8 | Batter leg stump | 680 | Top of stump | Dumb peer |
 
-Constants in `src/cricket_uwb/geometry.py`:
+Constants in `src/infinity_stumps/geometry.py`:
 - `PITCH_HL = 10.06 m` (half pitch length, ICC standard 22 yards)
 - `PAI_X = 7.62 m` (Protected Area Indicator longitudinal offset)
 - `PAI_Y = 1.53 m` (PAI lateral offset)
@@ -418,7 +418,7 @@ The data model is:
 
 ### 6.2 State estimation: EKF + RTS smoother
 
-**Module:** `src/cricket_uwb/ekf.py` → `TrajectoryEKF`
+**Module:** `src/infinity_stumps/ekf.py` → `TrajectoryEKF`
 
 **State vector:** 9-dimensional
 ```
@@ -428,7 +428,7 @@ x = [px, py, pz, vx, vy, vz, ωx, ωy, ωz]
        (m)       (m/s)       (rad/s)
 ```
 
-**Dynamics model:** drag + Magnus + gravity ODE (`src/cricket_uwb/physics.py`)
+**Dynamics model:** drag + Magnus + gravity ODE (`src/infinity_stumps/physics.py`)
 ```
 dp/dt = v
 dv/dt = -g·ẑ
@@ -491,7 +491,7 @@ systematic error per cycle. The EKF avoids this.
 
 ### 6.4 LBW prediction (post-impact)
 
-**Module:** `src/cricket_uwb/lbw.py`
+**Module:** `src/infinity_stumps/lbw.py`
 
 Triggered when the ball's ADXL372 detects pad impact (or by user
 selecting a moment in replay):
@@ -535,7 +535,7 @@ All values in `sim_realistic.py` / `sim_ekf.py` constants section.
 
 ## 7. Software Modules
 
-### 7.1 `src/cricket_uwb/` — Python reference / sim implementation
+### 7.1 `src/infinity_stumps/` — Python reference / sim implementation
 
 | Module | Purpose |
 |---|---|

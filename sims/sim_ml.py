@@ -22,30 +22,42 @@ cached to outputs/ so re-running is fast.
 """
 
 from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
+
+# Re-use the realistic occluder + measurement model verbatim.
+import sys
 from pathlib import Path
 
 import joblib
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler
 
-from cricket_uwb import (ANCHORS_8, RANGE_SIGMA_DEFAULT,
-                          solve_position, fit_trajectory)
-from cricket_uwb.physics import integrate_trajectory, make_delivery
-from cricket_uwb.skeleton import (sample_batter, Bone,
-                                    line_bone_chord_length,
-                                    CHORD_BLOCK_THRESHOLD_M)
+from infinity_stumps import (
+    ANCHORS_8,
+    RANGE_SIGMA_DEFAULT,
+    fit_trajectory,
+    solve_position,
+)
+from infinity_stumps.physics import integrate_trajectory, make_delivery
+from infinity_stumps.skeleton import (
+    CHORD_BLOCK_THRESHOLD_M,
+    Bone,
+    line_bone_chord_length,
+    sample_batter,
+)
 
-# Re-use the realistic occluder + measurement model verbatim.
-import sys
 sys.path.insert(0, str(Path(__file__).parent))
 from sim_realistic import (  # noqa: E402
-    static_bones_realistic, bowler_bones_realistic, measure,
-    HUBER_FSCALE, UWB_RATE_HZ,
+    HUBER_FSCALE,
+    UWB_RATE_HZ,
+    bowler_bones_realistic,
+    measure,
+    static_bones_realistic,
 )
 
 N_TRAIN_DELIVERIES = 500
@@ -56,6 +68,7 @@ MODEL_CACHE = Path("outputs/sim_ml_models.joblib")
 
 
 # ---------- training data generation ----------
+
 
 def simulate_one_delivery(seed: int):
     """One delivery — returns truth params + per-sample raw observations.
@@ -121,22 +134,23 @@ def simulate_one_delivery(seed: int):
 
 def generate_training_data(n: int, workers: int):
     seeds = list(range(10_000, 10_000 + n))
-    print(f"Generating {n} training deliveries with {workers} workers...",
-          flush=True)
+    print(f"Generating {n} training deliveries with {workers} workers...", flush=True)
     out = []
     ctx = mp.get_context("spawn")
     with ctx.Pool(workers) as pool:
-        for i, r in enumerate(pool.imap_unordered(simulate_one_delivery,
-                                                  seeds, chunksize=4)):
+        for i, r in enumerate(
+            pool.imap_unordered(simulate_one_delivery, seeds, chunksize=4)
+        ):
             if r is not None:
                 out.append(r)
             if (i + 1) % 50 == 0:
-                print(f"  {i+1}/{n}  kept={len(out)}", flush=True)
+                print(f"  {i + 1}/{n}  kept={len(out)}", flush=True)
     print(f"Kept {len(out)}/{n} deliveries", flush=True)
     return out
 
 
 # ---------- featurization ----------
+
 
 def featurize(deliveries):
     X_init, y_init = [], []
@@ -148,60 +162,85 @@ def featurize(deliveries):
         # --- initializer features: first N (t, x, y, z)
         feat_i = np.empty(N_INIT_SAMPLES * 4)
         for k in range(N_INIT_SAMPLES):
-            feat_i[4*k] = d["t"][k]
-            feat_i[4*k+1:4*k+4] = d["raw_xyz"][k]
+            feat_i[4 * k] = d["t"][k]
+            feat_i[4 * k + 1 : 4 * k + 4] = d["raw_xyz"][k]
         X_init.append(feat_i)
         y_init.append(np.concatenate([d["release"], d["v0"], d["spin"]]))
         # --- corrector features: per-timestep
         valid = (~np.isnan(d["ranges"])).astype(np.float64)
         rng_filled = np.where(valid > 0, d["ranges"], 0.0)
         # First-pass residuals: ||A - raw|| - r, masked
-        dists = np.linalg.norm(ANCHORS_8[None, :, :]
-                               - d["raw_xyz"][:, None, :], axis=2)
+        dists = np.linalg.norm(ANCHORS_8[None, :, :] - d["raw_xyz"][:, None, :], axis=2)
         resid = (dists - rng_filled) * valid
         for k in range(n):
-            feat_c = np.concatenate([
-                d["raw_xyz"][k],   # 3
-                rng_filled[k],     # 8
-                valid[k],          # 8
-                resid[k],          # 8
-            ])
+            feat_c = np.concatenate(
+                [
+                    d["raw_xyz"][k],  # 3
+                    rng_filled[k],  # 8
+                    valid[k],  # 8
+                    resid[k],  # 8
+                ]
+            )
             X_corr.append(feat_c)
             y_corr.append(d["true_xyz"][k] - d["raw_xyz"][k])
-    return (np.asarray(X_init), np.asarray(y_init),
-            np.asarray(X_corr), np.asarray(y_corr))
+    return (
+        np.asarray(X_init),
+        np.asarray(y_init),
+        np.asarray(X_corr),
+        np.asarray(y_corr),
+    )
 
 
 # ---------- training ----------
+
 
 def train_models(X_init, y_init, X_corr, y_corr):
     # Initializer outputs span very different scales (pos ~10 m, v0 ~30,
     # spin ~50), so wrap with TransformedTargetRegressor + StandardScaler
     # to also normalise the targets — otherwise spin loss dominates.
-    sc_i = StandardScaler(); X_init_s = sc_i.fit_transform(X_init)
-    inner_i = MLPRegressor(hidden_layer_sizes=(64, 64), max_iter=400,
-                            early_stopping=True, validation_fraction=0.15,
-                            random_state=0, verbose=False)
-    init_mdl = TransformedTargetRegressor(regressor=inner_i,
-                                           transformer=StandardScaler())
+    sc_i = StandardScaler()
+    X_init_s = sc_i.fit_transform(X_init)
+    inner_i = MLPRegressor(
+        hidden_layer_sizes=(64, 64),
+        max_iter=400,
+        early_stopping=True,
+        validation_fraction=0.15,
+        random_state=0,
+        verbose=False,
+    )
+    init_mdl = TransformedTargetRegressor(
+        regressor=inner_i, transformer=StandardScaler()
+    )
     print("Training initializer...", flush=True)
     init_mdl.fit(X_init_s, y_init)
-    print(f"  Init   R²={init_mdl.score(X_init_s, y_init):.3f}  "
-          f"iters={init_mdl.regressor_.n_iter_}", flush=True)
+    print(
+        f"  Init   R²={init_mdl.score(X_init_s, y_init):.3f}  "
+        f"iters={init_mdl.regressor_.n_iter_}",
+        flush=True,
+    )
 
     # Corrector targets are well-scaled (deltas ~cm), no wrapper needed.
-    sc_c = StandardScaler(); X_corr_s = sc_c.fit_transform(X_corr)
-    corr_mdl = MLPRegressor(hidden_layer_sizes=(64, 64), max_iter=200,
-                            early_stopping=True, validation_fraction=0.15,
-                            random_state=0, verbose=False)
+    sc_c = StandardScaler()
+    X_corr_s = sc_c.fit_transform(X_corr)
+    corr_mdl = MLPRegressor(
+        hidden_layer_sizes=(64, 64),
+        max_iter=200,
+        early_stopping=True,
+        validation_fraction=0.15,
+        random_state=0,
+        verbose=False,
+    )
     print("Training corrector...", flush=True)
     corr_mdl.fit(X_corr_s, y_corr)
-    print(f"  Corr   R²={corr_mdl.score(X_corr_s, y_corr):.3f}  "
-          f"iters={corr_mdl.n_iter_}", flush=True)
+    print(
+        f"  Corr   R²={corr_mdl.score(X_corr_s, y_corr):.3f}  iters={corr_mdl.n_iter_}",
+        flush=True,
+    )
     return {"init": (sc_i, init_mdl), "corr": (sc_c, corr_mdl)}
 
 
 # ---------- evaluation ----------
+
 
 def run_one(seed: int, models: dict | None = None):
     rng = np.random.default_rng(seed)
@@ -227,11 +266,15 @@ def run_one(seed: int, models: dict | None = None):
             est = solve_position(ranges, ANCHORS_8, x0)
         except Exception:
             continue
-        times.append(t); raw_p.append(est); rng_arr.append(ranges); last = est
+        times.append(t)
+        raw_p.append(est)
+        rng_arr.append(ranges)
+        last = est
 
     if len(times) < 20:
         return float("nan")
-    times = np.asarray(times); raw_p = np.asarray(raw_p)
+    times = np.asarray(times)
+    raw_p = np.asarray(raw_p)
     rng_arr = np.asarray(rng_arr)
 
     # Corrector: nudge raw positions BEFORE the physics fit.
@@ -239,8 +282,7 @@ def run_one(seed: int, models: dict | None = None):
         sc, mdl = models["corr"]
         valid = (~np.isnan(rng_arr)).astype(np.float64)
         rng_f = np.where(valid > 0, rng_arr, 0.0)
-        dists = np.linalg.norm(ANCHORS_8[None, :, :]
-                               - raw_p[:, None, :], axis=2)
+        dists = np.linalg.norm(ANCHORS_8[None, :, :] - raw_p[:, None, :], axis=2)
         resid = (dists - rng_f) * valid
         feats = np.concatenate([raw_p, rng_f, valid, resid], axis=1)
         delta = mdl.predict(sc.transform(feats))
@@ -254,14 +296,15 @@ def run_one(seed: int, models: dict | None = None):
         sc, mdl = models["init"]
         feat_i = np.empty(N_INIT_SAMPLES * 4)
         for k in range(N_INIT_SAMPLES):
-            feat_i[4*k] = times[k]
-            feat_i[4*k+1:4*k+4] = pos_in[k]
+            feat_i[4 * k] = times[k]
+            feat_i[4 * k + 1 : 4 * k + 4] = pos_in[k]
         x0_fit = mdl.predict(sc.transform(feat_i.reshape(1, -1)))[0]
 
     idx_m = np.clip(np.searchsorted(ts, times), 0, len(ts) - 1)
     truth_m = st[idx_m, :3]
-    fitted, _ = fit_trajectory(times, pos_in, loss="huber",
-                                 f_scale=HUBER_FSCALE, x0=x0_fit)
+    fitted, _ = fit_trajectory(
+        times, pos_in, loss="huber", f_scale=HUBER_FSCALE, x0=x0_fit
+    )
     err = fitted - truth_m
     return float(np.sqrt((err**2).sum(axis=1)).mean() * 1000)
 
@@ -287,6 +330,7 @@ def _eval_worker(task):
 
 # ---------- main ----------
 
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n-train", type=int, default=N_TRAIN_DELIVERIES)
@@ -305,9 +349,9 @@ def main():
     else:
         deliveries = generate_training_data(args.n_train, args.workers)
         X_init, y_init, X_corr, y_corr = featurize(deliveries)
-        np.savez_compressed(DATA_CACHE,
-                            X_init=X_init, y_init=y_init,
-                            X_corr=X_corr, y_corr=y_corr)
+        np.savez_compressed(
+            DATA_CACHE, X_init=X_init, y_init=y_init, X_corr=X_corr, y_corr=y_corr
+        )
     print(f"  Init set: {X_init.shape} -> {y_init.shape}", flush=True)
     print(f"  Corr set: {X_corr.shape} -> {y_corr.shape}", flush=True)
 
@@ -318,10 +362,12 @@ def main():
         models = train_models(X_init, y_init, X_corr, y_corr)
         joblib.dump(models, MODEL_CACHE)
 
-    print(f"\nEvaluating on n=30 seeds (1500..1529), {args.workers} workers...",
-          flush=True)
+    print(
+        f"\nEvaluating on n=30 seeds (1500..1529), {args.workers} workers...",
+        flush=True,
+    )
     cfgs = {
-        "baseline":  None,
+        "baseline": None,
         "init only": {"init": models["init"]},
         "corr only": {"corr": models["corr"]},
         "init+corr": models,
@@ -332,8 +378,7 @@ def main():
     all_tasks = [(s, name) for name in cfgs for s in EVAL_SEEDS]
     ctx = mp.get_context("fork")
     with ctx.Pool(args.workers) as pool:
-        results_raw = list(pool.imap_unordered(_eval_worker, all_tasks,
-                                                chunksize=2))
+        results_raw = list(pool.imap_unordered(_eval_worker, all_tasks, chunksize=2))
     # Aggregate.
     by_cfg: dict = {name: [] for name in cfgs}
     for name, r in results_raw:
@@ -342,17 +387,21 @@ def main():
     results = {name: np.asarray(v) for name, v in by_cfg.items()}
     for name in cfgs:
         r = results[name]
-        print(f"  {name:10s}  mean={r.mean():>6.1f}  "
-              f"med={np.median(r):>6.1f}  "
-              f"p95={np.percentile(r, 95):>6.1f}  "
-              f"max={r.max():>6.1f}  (n={len(r)})", flush=True)
+        print(
+            f"  {name:10s}  mean={r.mean():>6.1f}  "
+            f"med={np.median(r):>6.1f}  "
+            f"p95={np.percentile(r, 95):>6.1f}  "
+            f"max={r.max():>6.1f}  (n={len(r)})",
+            flush=True,
+        )
 
     fig, ax = plt.subplots(figsize=(10, 5))
     labels = list(results.keys())
     data = [results[k] for k in labels]
     bp = ax.boxplot(data, widths=0.6, patch_artist=True, tick_labels=labels)
     for patch, c in zip(bp["boxes"], ["#888", "#4a8", "#48a", "#8a4"]):
-        patch.set_alpha(0.7); patch.set_facecolor(c)
+        patch.set_alpha(0.7)
+        patch.set_facecolor(c)
     ax.set_ylabel("Fit 3D RMS (mm) @ 100 Hz")
     ax.set_title("Sim ML — physics fit + learned init + learned corrector")
     ax.grid(alpha=0.3, axis="y")

@@ -14,15 +14,23 @@ geometry uses oriented bones via `line_bone_chord_length`.
 """
 
 from __future__ import annotations
-import numpy as np
-import matplotlib.pyplot as plt
 
-from cricket_uwb import (ANCHORS_8, RANGE_SIGMA_DEFAULT,
-                          solve_position, fit_trajectory)
-from cricket_uwb.physics import integrate_trajectory, make_delivery
-from cricket_uwb.skeleton import (sample_batter, Bone,
-                                    line_bone_chord_length,
-                                    CHORD_BLOCK_THRESHOLD_M)
+import matplotlib.pyplot as plt
+import numpy as np
+
+from infinity_stumps import (
+    ANCHORS_8,
+    RANGE_SIGMA_DEFAULT,
+    fit_trajectory,
+    solve_position,
+)
+from infinity_stumps.physics import integrate_trajectory, make_delivery
+from infinity_stumps.skeleton import (
+    CHORD_BLOCK_THRESHOLD_M,
+    Bone,
+    line_bone_chord_length,
+    sample_batter,
+)
 
 P_DETECT = 0.85
 P_FP = 0.02
@@ -36,20 +44,38 @@ UWB_RATE_HZ = 100.0
 
 # ---------- occluder generators ----------
 
+
 def static_bones_old():
     """sim 05b-equivalent: blob batter + fat-cylinder static people."""
     HUMAN_R = 0.35
     return [
-        Bone(np.array([-10.5, -0.40, 0.0]),
-             np.array([-10.5, -0.40, 1.85]), HUMAN_R, "umpire"),
-        Bone(np.array([+10.0, -0.05, 0.0]),
-             np.array([+10.0, -0.05, 1.85]), HUMAN_R, "batter_blob"),
-        Bone(np.array([+11.0,  0.0,  0.0]),
-             np.array([+11.0,  0.0,  1.10]), HUMAN_R, "keeper"),
-        Bone(np.array([+11.2, -1.20, 0.0]),
-             np.array([+11.2, -1.20, 1.10]), HUMAN_R, "slip1"),
-        Bone(np.array([+11.5, -1.80, 0.0]),
-             np.array([+11.5, -1.80, 1.10]), HUMAN_R, "slip2"),
+        Bone(
+            np.array([-10.5, -0.40, 0.0]),
+            np.array([-10.5, -0.40, 1.85]),
+            HUMAN_R,
+            "umpire",
+        ),
+        Bone(
+            np.array([+10.0, -0.05, 0.0]),
+            np.array([+10.0, -0.05, 1.85]),
+            HUMAN_R,
+            "batter_blob",
+        ),
+        Bone(
+            np.array([+11.0, 0.0, 0.0]), np.array([+11.0, 0.0, 1.10]), HUMAN_R, "keeper"
+        ),
+        Bone(
+            np.array([+11.2, -1.20, 0.0]),
+            np.array([+11.2, -1.20, 1.10]),
+            HUMAN_R,
+            "slip1",
+        ),
+        Bone(
+            np.array([+11.5, -1.80, 0.0]),
+            np.array([+11.5, -1.80, 1.10]),
+            HUMAN_R,
+            "slip2",
+        ),
     ]
 
 
@@ -57,17 +83,22 @@ def static_bones_realistic(rng):
     """Skeleton batter sampled per delivery + realistic-radius static people."""
     bones = [
         # Umpire — torso width 0.20m (more realistic than the 0.35 blob)
-        Bone(np.array([-10.5, -0.40, 0.0]),
-             np.array([-10.5, -0.40, 1.85]), 0.20, "umpire"),
+        Bone(
+            np.array([-10.5, -0.40, 0.0]),
+            np.array([-10.5, -0.40, 1.85]),
+            0.20,
+            "umpire",
+        ),
         # Keeper (crouched, slightly stockier in crouch)
-        Bone(np.array([+11.0,  0.0,  0.0]),
-             np.array([+11.0,  0.0,  1.10]), 0.25, "keeper"),
+        Bone(np.array([+11.0, 0.0, 0.0]), np.array([+11.0, 0.0, 1.10]), 0.25, "keeper"),
         # 1st slip
-        Bone(np.array([+11.2, -1.20, 0.0]),
-             np.array([+11.2, -1.20, 1.10]), 0.22, "slip1"),
+        Bone(
+            np.array([+11.2, -1.20, 0.0]), np.array([+11.2, -1.20, 1.10]), 0.22, "slip1"
+        ),
         # 2nd slip
-        Bone(np.array([+11.5, -1.80, 0.0]),
-             np.array([+11.5, -1.80, 1.10]), 0.22, "slip2"),
+        Bone(
+            np.array([+11.5, -1.80, 0.0]), np.array([+11.5, -1.80, 1.10]), 0.22, "slip2"
+        ),
     ]
     batter = sample_batter(rng, stance_x_centre=10.0)
     bones.extend(batter.bones)
@@ -79,11 +110,10 @@ def bowler_bones_old(t):
     if t <= 0.5:
         s = t / 0.5
         x = -9.0 + 5.0 * s
-        y =  0.20 + 0.40 * s
+        y = 0.20 + 0.40 * s
     else:
         x, y = -4.0, 0.60
-    return [Bone(np.array([x, y, 0.0]),
-                 np.array([x, y, 1.85]), 0.35, "bowler_old")]
+    return [Bone(np.array([x, y, 0.0]), np.array([x, y, 1.85]), 0.35, "bowler_old")]
 
 
 def bowler_bones_realistic(t):
@@ -96,20 +126,21 @@ def bowler_bones_realistic(t):
     if t <= 0.5:
         s = t / 0.5
         x = -8.84 + (-5.0 - -8.84) * s
-        y =  0.20 + ( 1.50 -  0.20) * s
+        y = 0.20 + (1.50 - 0.20) * s
     else:
         x, y = -5.0, 1.50
-    bones = [Bone(np.array([x, y, 0.0]),
-                  np.array([x, y, 1.85]), 0.20, "bowler_torso")]
+    bones = [Bone(np.array([x, y, 0.0]), np.array([x, y, 1.85]), 0.20, "bowler_torso")]
     if t <= 0.15:
         # Arm extended overhead — modelled as a thinner cylinder from
         # torso top to release height
-        bones.append(Bone(np.array([x, y, 1.85]),
-                          np.array([x, y, 2.50]), 0.05, "bowler_arm"))
+        bones.append(
+            Bone(np.array([x, y, 1.85]), np.array([x, y, 2.50]), 0.05, "bowler_arm")
+        )
     return bones
 
 
 # ---------- measurement + run ----------
+
 
 def is_blocked(p_source, p_target, bones, threshold=CHORD_BLOCK_THRESHOLD_M):
     for b in bones:
@@ -135,16 +166,17 @@ def measure(true_pos, anchors, bones, rng):
             elif rng.random() < P_DETECT:
                 noisy[i] = np.nan
             else:
-                noisy[i] = (true_r[i] + rng.uniform(*NLOS_BIAS)
-                            + rng.normal(0.0, SIGMA_NLOS))
+                noisy[i] = (
+                    true_r[i] + rng.uniform(*NLOS_BIAS) + rng.normal(0.0, SIGMA_NLOS)
+                )
     return noisy
 
 
 def run_one(scenario, seed):
     rp, v0, spin = make_delivery(speed_mps=38.0)
     ts, st = integrate_trajectory(rp, v0, spin)
-    sample_t = np.arange(0.01, ts[-1]-0.01, 1.0 / UWB_RATE_HZ)
-    idx = np.clip(np.searchsorted(ts, sample_t), 0, len(ts)-1)
+    sample_t = np.arange(0.01, ts[-1] - 0.01, 1.0 / UWB_RATE_HZ)
+    idx = np.clip(np.searchsorted(ts, sample_t), 0, len(ts) - 1)
     sample_p = st[idx, :3]
 
     rng = np.random.default_rng(seed)
@@ -171,15 +203,17 @@ def run_one(scenario, seed):
             est = solve_position(ranges, ANCHORS_8, x0)
         except Exception:
             continue
-        meas_t.append(t); meas_p.append(est); last = est
+        meas_t.append(t)
+        meas_p.append(est)
+        last = est
 
-    meas_t = np.array(meas_t); meas_p = np.array(meas_p)
+    meas_t = np.array(meas_t)
+    meas_p = np.array(meas_p)
     if len(meas_t) < 20:
         return float("nan"), 0.0
-    idx_m = np.clip(np.searchsorted(ts, meas_t), 0, len(ts)-1)
+    idx_m = np.clip(np.searchsorted(ts, meas_t), 0, len(ts) - 1)
     truth_m = st[idx_m, :3]
-    fitted, _ = fit_trajectory(meas_t, meas_p,
-                                 loss="huber", f_scale=HUBER_FSCALE)
+    fitted, _ = fit_trajectory(meas_t, meas_p, loss="huber", f_scale=HUBER_FSCALE)
     err = fitted - truth_m
     rms = float(np.sqrt((err**2).sum(axis=1)).mean() * 1000)
     drop_rate = n_blocked_total / max(n_total, 1)
@@ -187,8 +221,7 @@ def run_one(scenario, seed):
 
 
 def main():
-    print("\nSim Realistic — skeleton batter + corrected bowler @ 100 Hz\n",
-          flush=True)
+    print("\nSim Realistic — skeleton batter + corrected bowler @ 100 Hz\n", flush=True)
     print(f"  UWB rate         : {int(UWB_RATE_HZ)} Hz (ETSI-compliant)")
     print(f"  NLOS detection   : p_detect={P_DETECT}, p_fp={P_FP}")
     print(f"  Solver loss      : Huber (f_scale={HUBER_FSCALE})\n", flush=True)
@@ -200,38 +233,51 @@ def main():
         for s in range(N_MC):
             r, d = run_one(scenario, seed=1500 + s)
             if not np.isnan(r):
-                rmss.append(r); drops.append(d)
-            print(f"    [{s+1}/{N_MC}] fit RMS = "
-                  f"{'fail' if np.isnan(r) else f'{r:6.1f} mm'}, "
-                  f"drop_rate = {d*100:.1f}%", flush=True)
-        rmss = np.array(rmss); drops = np.array(drops)
+                rmss.append(r)
+                drops.append(d)
+            print(
+                f"    [{s + 1}/{N_MC}] fit RMS = "
+                f"{'fail' if np.isnan(r) else f'{r:6.1f} mm'}, "
+                f"drop_rate = {d * 100:.1f}%",
+                flush=True,
+            )
+        rmss = np.array(rmss)
+        drops = np.array(drops)
         results[scenario] = (rmss, drops)
-        print(f"    -> mean={rmss.mean():.1f}  med={np.median(rmss):.1f}  "
-              f"p95={np.percentile(rmss,95):.1f} mm  "
-              f"avg drop={drops.mean()*100:.1f}%\n", flush=True)
+        print(
+            f"    -> mean={rmss.mean():.1f}  med={np.median(rmss):.1f}  "
+            f"p95={np.percentile(rmss, 95):.1f} mm  "
+            f"avg drop={drops.mean() * 100:.1f}%\n",
+            flush=True,
+        )
 
     print("\nSUMMARY")
     print("-" * 60)
     print(f"  {'scenario':15s} {'mean':>8s} {'med':>8s} {'p95':>8s} {'drop%':>8s}")
     for name, (rmss, drops) in results.items():
-        print(f"  {name:15s} {rmss.mean():>7.1f}  {np.median(rmss):>7.1f}  "
-              f"{np.percentile(rmss,95):>7.1f}  {drops.mean()*100:>7.1f}")
+        print(
+            f"  {name:15s} {rmss.mean():>7.1f}  {np.median(rmss):>7.1f}  "
+            f"{np.percentile(rmss, 95):>7.1f}  {drops.mean() * 100:>7.1f}"
+        )
     old_rms = results["old"][0].mean()
     new_rms = results["realistic"][0].mean()
     delta = (new_rms - old_rms) / old_rms * 100
-    print(f"\n  Δ realistic vs old: {delta:+.1f}%  "
-          f"({'better' if delta < 0 else 'worse'})")
+    print(
+        f"\n  Δ realistic vs old: {delta:+.1f}%  ({'better' if delta < 0 else 'worse'})"
+    )
 
     fig, ax = plt.subplots(figsize=(9, 5))
     labels = list(results.keys())
     data = [results[k][0] for k in labels]
     bp = ax.boxplot(data, widths=0.6, patch_artist=True, tick_labels=labels)
     for patch, c in zip(bp["boxes"], ["#c44", "#48a"]):
-        patch.set_alpha(0.7); patch.set_facecolor(c)
+        patch.set_alpha(0.7)
+        patch.set_facecolor(c)
     ax.axhline(47, color="purple", ls="--", label="sim 05b at 500 Hz (~47 mm)")
     ax.set_ylabel("Fit 3D RMS (mm) at 100 Hz")
     ax.set_title("Sim Realistic — old vs skeleton+corrected-bowler occlusion")
-    ax.grid(alpha=0.3, axis="y"); ax.legend()
+    ax.grid(alpha=0.3, axis="y")
+    ax.legend()
     plt.tight_layout()
     out = "outputs/sim_realistic.png"
     plt.savefig(out, dpi=130, bbox_inches="tight")

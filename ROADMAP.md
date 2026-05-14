@@ -14,7 +14,7 @@ needs a recursive estimator that only sees past samples. If precision
 loss is 2× we're fine, if 10× the real-time product is broken.
 
 **Prompt:**
-Read CLAUDE.md and src/cricket_uwb/. Create sims/04_sliding_window.py:
+Read CLAUDE.md and src/infinity_stumps/. Create sims/04_sliding_window.py:
 
 Reuse the trajectory generator and noise model from sim 03.
 Implement a sliding-window physics-fit estimator that, at each time t,
@@ -127,7 +127,7 @@ expected packet success rate.
 
 ## How to use
 
-1. `cd cricket-uwb`
+1. `cd infinity-stumps`
 2. Open Claude Code in the directory
 3. Pick a sim, paste its prompt
 4. Review generated code and outputs
