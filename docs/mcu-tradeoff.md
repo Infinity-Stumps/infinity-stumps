@@ -39,6 +39,14 @@ easier for open-source contributors to build and hack on.
   provisioning; the board then behaves like an Adafruit Feather
   (USB-flashable, UF2-style). This is the standard OSHW model — Adafruit,
   Sparkfun, Prusa all do exactly this, and CERN-OHL-S permits it.
+- **The PCB fab can do the bootloader flash.** JLCPCB offers a PCBA
+  firmware-flashing service — they program each board after assembly from
+  a HEX/BIN you supply (~$8 setup + ~$8/hr labour). Requirements:
+  accessible on-board SWD pads (the Tag-Connect TC2030 block) and a
+  support confirmation that they can target the nRF52833 over SWD,
+  including the APPROTECT `--recover` step. So fab + assembly + flash can
+  be a single order — no in-house provisioning line needed. A standalone
+  J-Link + scripted `nrfjprog` stays as the fallback and for dev boards.
 - **Keep BOM / Gerbers / firmware fully public.** Self-builders get a free
   DIY path; only someone hand-assembling *and* doing bare-metal bring-up
   needs a ~£15 probe — and that person already owns one.

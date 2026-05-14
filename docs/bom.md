@@ -45,7 +45,7 @@ is in `hardware/anchor-board/README.md`.
 | Charge controller | TI BQ24074 | 1.50 | USB-C input, Li-ion CC/CV. 1.5 A max charge. |
 | 3.0 V LDO | TI TLV75530PDQNR | 0.40 | Low-IQ, 500 mA. Powers DWM3001C from battery. |
 | USB-C receptacle | GCT USB4105-GF-A | 0.40 | Standard CC1/CC2, no DP/Alt-Mode |
-| USB-C TVS / ESD array | TI TPD4S014 (or equivalent) | 0.30 | USB lines ESD + overvoltage. Critical for outdoor / human-handled product. |
+| USB-C ESD | TI TPD2E2U06 (CC lines) + VBUS TVS diode | 0.30 | CC1/CC2 ESD array + a dedicated VBUS surge clamp. Replaces the originally-specced TPD4S014 — a USB data-port protector, the wrong fit for this power-only port. Critical for outdoor / human-handled product. |
 | 16 MB SPI flash | Winbond W25Q128JVSIQ | 1.00 | Disconnect cache (not archive). See architecture.md §5.4. **Populated on every board** — used only by hub (A7) firmware, but fitting it everywhere makes any anchor hub-promotable and keeps a single assembly BOM. |
 | Flash power load switch | TI TPS22916C | 0.20 | Gates flash VCC in deep sleep. One GPIO controls it. Saves ~1 µA in deep-power-down mode. |
 | Tactile power button | Alps SKHHALA010 | 0.10 | Side-mounted, IP67-rated |
@@ -191,6 +191,8 @@ The DWM3001C module is the dominant cost driver (~65%). At high volume, custom i
 | 2026-05-14 | PCB 30×40 mm → ~25×145 mm, £2.00 → £3.50 | Tall-and-thin form factor to slide vertically inside the stump tube. From the anchor-board design. |
 | 2026-05-14 | "Bulk caps ×4" + "Misc passives" → single "Passives (~40 parts)" line, £0.70 → £0.80 | Expanded to the itemised schematic-level list (incl. VBAT sense divider, USB shield RC) in the anchor-board doc. |
 | 2026-05-14 | PAI anchor is now explicitly the same board as the stump anchor (connector swap), not "same electronics" | One unified board design across all 8 anchors. |
+| 2026-05-14 | USB ESD: TPD4S014 → TPD2E2U06 (CC lines) + a VBUS TVS diode | TPD4S014 is a USB data-port protector — wrong fit for this sink-only, power-only port. From anchor-board schematic capture, README §4.2. |
+| 2026-05-14 | Added BQ24074 ILIM + ITERM program resistors (R24/R25) to the passives list | The original README §4.3 charger network omitted both program pins. From schematic capture. |
 | 2026-05-13 | Initial BOM | First active version, captures architecture decisions through May 13, 2026 |
 | 2026-05-13 | 32 kHz crystal added to all anchors | RTC accuracy for BLE timing + log timestamps |
 | 2026-05-13 | Flash: W25Q256 → W25Q128 | Disconnect-cache model (phone is source of truth), 16 MB plenty |

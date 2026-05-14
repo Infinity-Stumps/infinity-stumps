@@ -159,13 +159,22 @@ Sink-only, no USB-PD, no data — power in at 5 V.
 | R2, R3 | Resistor 0402 | 5.1 kΩ | CC1 / CC2 pull-downs (Rd) — required for a source to detect the sink |
 | C5 | Capacitor 0805 | 10 µF | VBUS bulk cap |
 | C6 | Capacitor 0402 | 100 nF | VBUS HF decoupling |
-| U2 | TI TPD4S014 | — | TVS/ESD array on VBUS + CC lines |
+| U2 | TI TPD2E2U06 | — | 2-channel low-cap (1.5 pF) TVS ESD array on the CC1 / CC2 lines |
+| D2 | TVS diode, SMF5.0A class | — | VBUS ESD / surge clamp (~5 V standoff), VBUS → GND |
 | R4 | Resistor 0402 | 1 MΩ | Shield-to-GND bleed (parallel with C7) |
 | C7 | Capacitor 0402 | 4.7 nF | Shield-to-GND, chassis noise return |
 
-> **PAI variant:** J1, R2, R3 are replaced by a 2-pin magnetic charge
-> connector (Rosenberger). VBUS path otherwise identical. This is the
-> *only* electrical difference between the stump and PAI boards.
+> **ESD parts — changed from the original spec.** The first draft listed
+> a single TI TPD4S014, but that is a USB *data-port* protector
+> (D+/D−/ID clamps + a VBUS load switch) — wasted on this sink-only,
+> power-only port. Replaced with the **TPD2E2U06** (TI's CC-line ESD
+> array) plus a dedicated **VBUS TVS diode (D2)**.
+
+> **PAI variant:** J1, R2, R3 and U2 are replaced by a 2-pin magnetic
+> charge connector (Rosenberger) — the magnetic connector has no CC
+> lines, so the CC pull-downs and the CC ESD array are not fitted. D2
+> (VBUS TVS) stays; the magnetic connector still feeds VBUS. This is the
+> only electrical difference between the stump and PAI boards.
 
 ### 4.3 Li-ion charger — TI BQ24074
 
@@ -180,6 +189,13 @@ Sink-only, no USB-PD, no data — power in at 5 V.
 | R7, R8 | Resistor 0402 | 10 kΩ + 10 kΩ | TS pin — equal divider holds TS at mid-rail, disabling temperature sensing in v1 (no pack thermistor). v2 may swap R8 for an NTC. |
 | R9, R10 | Resistor 0402 | 10 kΩ | /CHG and /PGOOD open-drain pull-ups to 3V0, also sensed by MCU GPIO |
 | R11, R12 | Resistor 0402 | strap | EN1 / EN2 mode straps — set input current limit (USB500 / ISET) |
+| R24 | Resistor 0402 | TBD | ILIM — input-current-limit program resistor; value from the BQ24074 datasheet at schematic capture |
+| R25 | Resistor 0402 | TBD | ITERM — charge-termination-current program resistor; value from the BQ24074 datasheet at schematic capture |
+
+> **R24 / R25 added during schematic capture.** The BQ24074's ILIM
+> (input current limit) and ITERM (termination current) pins each need a
+> program resistor; the original §4.3 list omitted them. The refs
+> continue past the §4 sequence (R15–R23 belong to §4.6–4.8).
 
 ### 4.4 Battery + protection — 18650 + DW01A/8205A
 
