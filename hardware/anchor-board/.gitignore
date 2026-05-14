@@ -4,3 +4,5 @@
 fp-info-cache
 # KiCad editor lock files (~<file>.lck) - present while the project is open
 ~*.lck
+# VS Code Local History extension
+.history/
