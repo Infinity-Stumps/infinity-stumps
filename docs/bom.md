@@ -12,19 +12,29 @@
 
 | Item | Qty | Unit £ | Subtotal £ | Notes |
 |---|---:|---:|---:|---|
-| Hub stump anchor | 1 | 30 | 30 | A7 — sync master + BLE gateway + disconnect cache |
-| Dumb stump anchor | 3 | 28 | 84 | A1, A2, A8 |
-| PAI ground anchor | 4 | 37 | 148 | A3-A6 — sealed IP67 housing |
+| Stump anchor | 4 | 31.20 | 125 | A1, A2, A7, A8 — **identical hardware**; A7 runs hub firmware |
+| PAI ground anchor | 4 | 39.00 | 156 | A3-A6 — same board, magnetic connector + sealed IP67 housing |
 | Ball tag | (per ball) | 53 | — | Add N × £53 for N balls |
-| **Per-pitch electronics** | | | **£262** | Before balls and enclosures |
+| **Per-pitch electronics** | | | **£281** | Before balls and enclosures |
 | Enclosures + assembly | × 8 | ~£40 | 320 | Stump caps + PAI housings + labour |
-| **Per-pitch total (8 anchors + housings)** | | | **~£582** | Plus N balls @ £53 each (+ shell) |
+| **Per-pitch total (8 anchors + housings)** | | | **~£601** | Plus N balls @ £53 each (+ shell) |
 
-For a club pitch with 6 game balls: **~£900**. For a single-ball training setup: **~£635**.
+For a club pitch with 6 game balls: **~£920**. For a single-ball training setup: **~£655**.
+
+> **One board, all eight anchors.** The stump anchor and the PAI anchor
+> are the *same PCB* — the PAI variant just swaps the USB-C receptacle
+> for a magnetic charging connector and uses a sealed housing. The hub
+> (A7) is firmware-only: every board is built identically (flash
+> populated) and any one is hub-promotable by reflashing. See
+> `hardware/anchor-board/README.md` for the board design.
 
 ---
 
-## Dumb stump anchor BOM (A1, A2, A8 — 3× per pitch)
+## Stump anchor BOM (A1, A2, A7, A8 — 4× per pitch, identical hardware)
+
+This is the single board design used at every anchor position. Full
+schematic-level part list (≈40 passives, pin allocation, layout rules)
+is in `hardware/anchor-board/README.md`.
 
 | Component | Part number | £ each | Notes / supplier |
 |---|---|---:|---|
@@ -36,42 +46,40 @@ For a club pitch with 6 game balls: **~£900**. For a single-ball training setup
 | 3.0 V LDO | TI TLV75530PDQNR | 0.40 | Low-IQ, 500 mA. Powers DWM3001C from battery. |
 | USB-C receptacle | GCT USB4105-GF-A | 0.40 | Standard CC1/CC2, no DP/Alt-Mode |
 | USB-C TVS / ESD array | TI TPD4S014 (or equivalent) | 0.30 | USB lines ESD + overvoltage. Critical for outdoor / human-handled product. |
+| 16 MB SPI flash | Winbond W25Q128JVSIQ | 1.00 | Disconnect cache (not archive). See architecture.md §5.4. **Populated on every board** — used only by hub (A7) firmware, but fitting it everywhere makes any anchor hub-promotable and keeps a single assembly BOM. |
+| Flash power load switch | TI TPS22916C | 0.20 | Gates flash VCC in deep sleep. One GPIO controls it. Saves ~1 µA in deep-power-down mode. |
 | Tactile power button | Alps SKHHALA010 | 0.10 | Side-mounted, IP67-rated |
 | RGB status LED | Würth 150141RV73100 | 0.10 | 0805 SMD, common-anode |
 | SWD tag-connect footprint | Tag-Connect TC2030-NL | 0.10 | No connector on board, just pads |
-| Bulk decoupling caps (×4) | 10 µF / 0.1 µF | 0.20 | Standard practice |
-| Misc passives | resistors, inductors | 0.50 | Per schematic |
-| PCB (4-layer, 30×40 mm) | PCBWay / JLCPCB | 2.00 | At 100-piece volume |
-| **Subtotal silicon + PCB** | | **28.40** | Excludes enclosure + assembly. DWM3001C integrating the accel + crystal drops ~£1.25 of discretes and ~£8 of module cost vs QPK3000. |
+| Passives (~40 parts) | caps / resistors / 1 ferrite | 0.80 | Full itemised list in `hardware/anchor-board/README.md` §4 — module decoupling, charger network, protection, ESD, VBAT sense divider, LED limits, etc. |
+| PCB (4-layer, ~25×145 mm) | PCBWay / JLCPCB | 3.50 | Tall-and-thin to slide vertically inside the stump. At 100-piece volume. |
+| **Subtotal silicon + PCB** | | **31.20** | Excludes enclosure + assembly. DWM3001C integrating the accel + crystal drops ~£1.25 of discretes and ~£8 of module cost vs QPK3000. |
 
----
-
-## Hub stump anchor BOM (A7 — 1× per pitch)
-
-All of the dumb anchor BOM, plus:
-
-| Extra component | Part number | £ each | Notes |
-|---|---|---:|---|
-| 16 MB SPI flash | Winbond W25Q128JVSIQ | 1.00 | Disconnect cache (not archive). See architecture.md §5.4. |
-| Flash power load switch | TI TPS22916C | 0.20 | Gates flash VCC in deep sleep. One GPIO controls it. Saves ~1 µA in deep-power-down mode. Worth the £0.20 for a battery-life product. |
-| **Hub anchor subtotal** | | **29.60** | |
-
-Designated hub-stump role is **firmware-only** — same PCB with the flash chip populated. In small volumes you can leave the flash footprint unpopulated on dumb anchors.
+The **hub role (A7) is firmware-only** — no hardware delta. Every board
+is built identically with the flash + load switch populated, so any
+anchor can take the hub role (or be swapped in as a hub replacement) by
+reflashing. There is no separate hub SKU.
 
 ---
 
 ## PAI ground anchor BOM (A3-A6 — 4× per pitch)
 
-Same electronics as dumb stump anchor (£28.40) plus:
+The **same board** as the stump anchor, with the USB-C receptacle
+swapped for a magnetic charging connector (to maintain IP67) and a
+sealed housing instead of a stump cap:
 
-| Extra component | Part number | £ each | Notes |
+| Component | Part number | £ each | Notes |
 |---|---|---:|---|
-| IP67 sealed cylinder enclosure | Custom CNC ali, ~50 mm diameter | 5.00 | Or potted ABS at higher volume |
+| Stump anchor board, less USB-C receptacle | per above | 30.80 | £31.20 base − £0.40 USB-C receptacle |
 | Magnetic charging connector | Rosenberger MagSafe-style 2-pin | 3.00 | Replaces USB-C to maintain IP67 |
+| IP67 sealed cylinder enclosure | Custom CNC ali, ~50 mm diameter | 5.00 | Or potted ABS at higher volume |
 | Anti-corrosion gasket | Generic EPDM O-ring | 0.20 | Threaded enclosure seal |
-| **PAI anchor subtotal** | | **36.60** | Includes the IP67 housing |
+| **PAI anchor subtotal** | | **39.00** | Includes the IP67 housing |
 
-Sits flush with the ground, threaded into a buried mounting cup. Magnetic charging via a separate dock for off-season.
+Sits flush with the ground, threaded into a buried mounting cup. Magnetic
+charging via a separate dock for off-season. The PCB is a one-component
+fork of the stump anchor (connector footprint only) — same board family,
+same Gerbers minus the USB-C cluster.
 
 ---
 
@@ -142,7 +150,9 @@ PAI ground anchor enclosure is included in its line above (£8.20 for housing pa
 
 ### v3+: Full-match offline buffer
 
-Replace W25Q128 with W25Q01JV (128 MB / 1 Gb): **+£8** on hub stump only.
+Replace W25Q128 with W25Q01JV (128 MB / 1 Gb): **+£8**. Since the flash
+is populated on every board, this would apply per-board unless the
+larger part is fitted only on the board assigned the hub role.
 
 ---
 
@@ -177,6 +187,10 @@ The DWM3001C module is the dominant cost driver (~65%). At high volume, custom i
 
 | Date | Change | Rationale |
 |---|---|---|
+| 2026-05-14 | Merged dumb + hub anchor into one "Stump anchor" line; flash + load switch now populated on every board | Single assembly BOM, any anchor hub-promotable by reflashing. Hub is firmware-only. +£1.20/board on the 7 non-hub boards is noise. See `hardware/anchor-board/README.md`. |
+| 2026-05-14 | PCB 30×40 mm → ~25×145 mm, £2.00 → £3.50 | Tall-and-thin form factor to slide vertically inside the stump tube. From the anchor-board design. |
+| 2026-05-14 | "Bulk caps ×4" + "Misc passives" → single "Passives (~40 parts)" line, £0.70 → £0.80 | Expanded to the itemised schematic-level list (incl. VBAT sense divider, USB shield RC) in the anchor-board doc. |
+| 2026-05-14 | PAI anchor is now explicitly the same board as the stump anchor (connector swap), not "same electronics" | One unified board design across all 8 anchors. |
 | 2026-05-13 | Initial BOM | First active version, captures architecture decisions through May 13, 2026 |
 | 2026-05-13 | 32 kHz crystal added to all anchors | RTC accuracy for BLE timing + log timestamps |
 | 2026-05-13 | Flash: W25Q256 → W25Q128 | Disconnect-cache model (phone is source of truth), 16 MB plenty |

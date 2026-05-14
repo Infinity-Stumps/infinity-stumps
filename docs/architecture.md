@@ -126,11 +126,14 @@ doesn't need to keep up with anchor scheduling.
 
 | Item | Qty | Unit cost | Notes |
 |---|---:|---:|---|
-| Hub stump anchor | 1 | ~£30 | DWM3001C + 1× 18650 + 16 MB flash + flash load switch + USB-C |
-| Dumb stump anchor | 3 | ~£28 | DWM3001C + 1× 18650 + USB-C |
-| PAI ground anchor | 4 | ~£37 | Same as dumb + IP67 sealed cylinder + magnetic charging |
+| Stump anchor | 4 | ~£31 | DWM3001C + 1× 18650 + 16 MB flash + USB-C. **Identical hardware** A1/A2/A7/A8; A7 runs hub firmware |
+| PAI ground anchor | 4 | ~£39 | Same board, magnetic connector instead of USB-C + IP67 sealed cylinder |
 | Ball tag | N | ~£53 | DWM3001C + ADXL372 + small LiPo + impact-survival shell |
-| **Per-pitch subtotal** | | **~£262** | Plus N balls. No edge PC. See `bom.md` for the line-item breakdown. |
+| **Per-pitch subtotal** | | **~£281** | Plus N balls. No edge PC. See `bom.md` for the line-item breakdown. |
+
+One board design serves all eight anchor positions — the hub (A7) is
+firmware-only, and the PAI variant is a one-component connector fork.
+See `hardware/anchor-board/README.md`.
 
 Enclosure / assembly costs roughly double the silicon, so realistic
 fully-assembled per-pitch cost ≈ **£700-£1,200** depending on volume.
@@ -164,7 +167,7 @@ Constants in `simulation/src/infinity_stumps/geometry.py`:
 
 All 8 anchors use the same hardware platform — only firmware differs:
 
-**Qorvo DWM3001C module** (~12×24×2.6 mm):
+**Qorvo DWM3001C module** (27 × 19.13 × 3.2 mm):
 - DW3110 UWB transceiver (channels 5/9, FiRa-compliant DS-TWR)
 - Nordic nRF52833 SoC (Cortex-M4F @ 64 MHz, BLE 5, 802.15.4)
 - Integrated 3-axis accelerometer (motion-wake, ball-strike,
@@ -201,16 +204,19 @@ All 8 anchors use the same hardware platform — only firmware differs:
 - (The 32.768 kHz LFXO crystal is on the DWM3001C module — no
   separate part. It provides the stable BLE timing / RTC reference
   during sleep that the internal RC oscillator can't.)
-- USB-C for charging + firmware updates
+- USB-C for charging + firmware updates (PAI anchors: magnetic
+  connector instead, to maintain IP67)
 - Custom enclosure (stump-top or sealed in-ground)
-- **Hub stump only:** 16 MB SPI flash (Winbond W25Q128) as a
-  **disconnect cache** (not a queryable archive). Phone is the source
-  of truth; the hub just forwards cycles via BLE notifications and
-  writes a backup copy to flash with a monotonic sequence counter.
-  On reconnect after a BLE drop, the phone requests gap-fill by
-  sequence range. 16 MB at our throughput is comfortably more than
-  a whole-session-disconnect's worth of cache. See §5 for the
-  protocol.
+- 16 MB SPI flash (Winbond W25Q128) + load switch — **populated on
+  every board** but used only by the hub firmware as a **disconnect
+  cache** (not a queryable archive). Phone is the source of truth; the
+  hub forwards cycles via BLE notifications and writes a backup copy to
+  flash with a monotonic sequence counter. On reconnect after a BLE
+  drop, the phone requests gap-fill by sequence range. 16 MB at our
+  throughput is comfortably more than a whole-session-disconnect's
+  worth of cache. Fitting the flash on every board (vs hub-only) costs
+  ~£1.20/board, keeps a single assembly BOM, and makes any anchor
+  hub-promotable by reflashing. See §5 for the protocol.
 
 ### 3.4 Ball tag electronics
 

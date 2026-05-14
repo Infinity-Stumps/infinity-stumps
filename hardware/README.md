@@ -9,8 +9,8 @@ for the system design.
 
 | Directory | Contents |
 |---|---|
-| `anchor-board/` | The stump-anchor PCB. One design serves both the **dumb** and **hub** roles — the hub variant just populates the SPI flash + load switch for the disconnect cache. KiCad project. |
-| `pai-board/` | The PAI (ground-level) anchor — same electronics as the stump anchor, in an IP67 sealed cylinder with a magnetic charging connector instead of USB-C. |
+| `anchor-board/` | The anchor PCB — **one design serves all eight anchor positions**. Every board is built identically (flash + load switch populated); the hub role (A7) is firmware-only and any board is hub-promotable by reflashing. Tall-and-thin to fit inside the stump. KiCad project. See its `README.md` for the full design spec. |
+| `pai-board/` | The PAI (ground-level) anchor — **not an independent design**, just a one-component fork of `anchor-board/`: USB-C receptacle swapped for a magnetic charging connector, in an IP67 sealed cylinder. Same board family, same Gerbers minus the USB-C cluster. |
 | `ball-tag/` | The in-ball tag — a custom 4-layer flex PCB shaped to the ball interior, carrying the DWM3001C + ADXL372 impact accelerometer + small LiPo. |
 | `mechanical/` | Enclosure design — stump-top caps, PAI housings, ball shell. STL + STEP. |
 

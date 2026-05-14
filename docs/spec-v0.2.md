@@ -115,9 +115,8 @@ despite a marketed 3.6 mm spec).
 
 | Item | Cost | Notes |
 |---|---|---|
-| Hub stump anchor (×1) | ~$140 | DWM3001C + 1× 18650 + flash for disconnect cache + USB-C + enclosure |
-| Dumb stump anchor (×3) | ~$115 ea | DWM3001C + 1× 18650 + USB-C + enclosure |
-| PAI anchor (×4) | ~$130 ea | + sealed cylinder, magnetic charging |
+| Stump anchor (×4) | ~$120 ea | DWM3001C + 1× 18650 + flash + USB-C + enclosure. Identical hardware A1/A2/A7/A8; A7 runs hub firmware |
+| PAI anchor (×4) | ~$135 ea | Same board, magnetic charging connector + sealed cylinder |
 | Ball tag (×N) | ~$190 ea | DWM3001C + ADXL372 (±200g, bounce/pad/bat timing) + piezo high-g impact sensor (±10-50 kg, impulse for v_in recovery → physics-determines Z trajectory) |
 | **Per-pitch** | **~$1,500** | Plus N balls. **No edge PC** — user supplies phone. |
 
