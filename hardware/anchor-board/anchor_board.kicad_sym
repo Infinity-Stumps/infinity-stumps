@@ -1246,7 +1246,7 @@
 			)
 		)
 		(symbol "BQ24074_1_1"
-			(pin input line
+			(pin passive line
 				(at -13.97 3.81 0)
 				(length 5.08)
 				(name "TS"
@@ -1276,7 +1276,7 @@
 					(effects (font (size 1.27 1.27)))
 				)
 			)
-			(pin input line
+			(pin passive line
 				(at -13.97 -3.81 0)
 				(length 5.08)
 				(name "CE"
@@ -1286,7 +1286,7 @@
 					(effects (font (size 1.27 1.27)))
 				)
 			)
-			(pin input line
+			(pin passive line
 				(at 13.97 3.81 180)
 				(length 5.08)
 				(name "ILIM"
@@ -1306,7 +1306,7 @@
 					(effects (font (size 1.27 1.27)))
 				)
 			)
-			(pin power_out line
+			(pin passive line
 				(at 13.97 -1.27 180)
 				(length 5.08)
 				(name "OUT"
@@ -1336,7 +1336,7 @@
 					(effects (font (size 1.27 1.27)))
 				)
 			)
-			(pin input line
+			(pin passive line
 				(at -1.27 11.43 270)
 				(length 5.08)
 				(name "TMR"
@@ -1346,7 +1346,7 @@
 					(effects (font (size 1.27 1.27)))
 				)
 			)
-			(pin input line
+			(pin passive line
 				(at 1.27 11.43 270)
 				(length 5.08)
 				(name "ITERM"
@@ -1356,7 +1356,7 @@
 					(effects (font (size 1.27 1.27)))
 				)
 			)
-			(pin input line
+			(pin passive line
 				(at 3.81 11.43 270)
 				(length 5.08)
 				(name "ISET"
@@ -1366,7 +1366,7 @@
 					(effects (font (size 1.27 1.27)))
 				)
 			)
-			(pin input line
+			(pin passive line
 				(at -5.08 -11.43 90)
 				(length 5.08)
 				(name "EN2"
@@ -1376,7 +1376,7 @@
 					(effects (font (size 1.27 1.27)))
 				)
 			)
-			(pin input line
+			(pin passive line
 				(at -2.54 -11.43 90)
 				(length 5.08)
 				(name "EN1"
