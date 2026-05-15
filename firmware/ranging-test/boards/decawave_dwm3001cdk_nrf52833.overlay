@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Infinity Stumps
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * DWM3001CDK overlay adding the DW3110 UWB chip as a child of SPI3.
+ *
+ * Internal nRF52833 <-> DW3110 wiring inside the DWM3001C module
+ * (from Qorvo's reference firmware custom_board.h):
+ *
+ *   SCK   = P0.3   (declared in board pinctrl)
+ *   MOSI  = P0.8   (declared in board pinctrl)
+ *   MISO  = P0.29  (declared in board pinctrl)
+ *   CS    = P1.6   (declared as cs-gpios in board.dts)
+ *   IRQ   = P1.2   <-- added here
+ *   RESET = P0.25  <-- added here
+ *   WAKEUP= P1.19  <-- added here
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&spi3 {
+	status = "okay";
+
+	dw3000: dw3000@0 {
+		compatible = "decawave,dw3000";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		reset-gpios  = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		irq-gpios    = <&gpio1  2 GPIO_ACTIVE_HIGH>;
+		wakeup-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
+	};
+};
